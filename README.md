@@ -141,6 +141,8 @@ bash stop.sh
 -----------------------------------
 
 ## 项目日志
+> 2025.04.21 `lsf` 增加模版红头文件
+> 2025.04.21 `zjh` 增加OCR功能
 > 2025.04.09 `zjh` 增加上传文件逻辑
 > 2025.03.28 `lsf` 增加文书样版种类
 > 2025.03.25 `zq` 增加局域网启动功能
@@ -151,156 +153,46 @@ bash stop.sh
 > 2025.03.17 `zq` 修复前端页面bug
 
 
+## 新增功能说明
 
+### 任务一：用户管理功能（zhy）
+1. **注册和登录UI + 后端接口**  
+   实现用户注册和登录界面的前端与后端接口，确保用户能够成功注册和登录。
 
-----------------------------------
+2. **登录后生成验证用的token**  
+   登录成功后生成验证用的token，并修改代码，确保后续所有操作都需要该token，若token无效或过期，系统会提示用户重新登录。
 
-下面的readme可以先不用看，后续readme会更新
+3. **存储用户交互历史**  
+   将用户的交互历史数据存储在服务器端，并使用数据库进行管理。原有的导出历史功能可以参考现有代码（如无法找到可咨询我）。
 
----------------------------------
+4. **修改导出历史结构**  
+   在现有的导出历史中，新增字段以记录用户的身份ID，方便进行历史记录的追溯。
 
-## 介绍
+### 任务二：交互风格定义（lsf）
+1. **定义四种类型的prompt**  
+   根据DeepSeek的prompt模板，借助大模型，编写四种不同类型的prompt，并将其集成到代码中。
 
-本项目旨在构建一个：模型层(models)-服务层(service)-展示层(views) 三层完全解耦的、支持二次开发、分开部署的、LLM落地框架。
+2. **增加前端UI界面**  
+   为用户增加选择性格的UI界面，允许用户设置默认的性格类型，提升个性化体验。
 
-(本项目展示层(views)已支持[langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM))
+3. **修改system prompt**  
+   修改原有的system prompt，将其分为静态和动态两部分：静态部分包括基本信息（例如“你是东北大学的学习助手...”），动态部分根据用户选择的性格生成相应的prompt。
 
-模型层：使用Python 3。采用各种方式加载模型，并采用Fastapi将所有接口api化。
-后续计划：
-用OPenai api的格式统一封装所有本地模型。
-将模型层制作成sdk并独立仓库，进一步降低部署难度。       
-计划参考：https://github.com/ninehills/chatglm-openai-api
+4. **修改导出历史结构**  
+   在原有的导出历史中，增加一个字段，用于记录用户选择的性格类型，确保每条记录都能关联到具体的交互风格。
 
-服务层：使用JS。采用Langchain.js+nest.js框架，实现业务逻辑开发与数据处理，提高与拓展模型层的性能。
-后续计划:
-不断跟进langchain-ChatGLM等优秀中间层项目，升级服务层。
-参考项目：https://github.com/imClumsyPanda/langchain-ChatGLM
+### 任务三：知识库管理及管理员管理（zjh）
+1. **增加管理员功能**  
+   在现有UI中增加管理员相关功能，可以通过增加框架或新建页面实现，确保管理员能够有效管理用户和系统。
 
-展示层: 使用JS。采用vue3全家桶+native-ui,展示本项目的成果。
-后续计划：
-不断跟进应用层的升级，同时提高页面的美观程度和交互体验。
-参考项目：https://github.com/Chanzhaoyu/chatgpt-web
+2. **将本地RAG改为统一管理的RAG**  
+   将原本本地的RAG（Relevance-Aware Graph）模块修改为统一管理模式，以便更高效地进行内容管理。
 
+3. **修改UI界面**  
+   适当修改UI界面，允许用户自行修改的部分保留，不允许修改的部分应注释掉或禁用，确保系统安全性和可用性。
 
-## 未来展望
+4. **完善附件上传功能**  
+   支持附件上传功能，允许用户上传不同格式的文件（如pdf、word、csv、ppt、txt、md、xlsx、json等），提升系统的兼容性。
 
-本项目的阶段性目标，是提供 LLM封装->本地知识库搭建->商业化部署->用户反馈收集(前端埋点，数据清洗等)->模型专业领域微调(使用上一个阶段收集的数据集)->LLM封装
-这样的LLM专业领域落地闭环解决方案
-
-即在将数据收集处理，模型微调解决方案也加入工作流。
-
-
-
-
-## 项目原理
-
-⛓️ 本项目实现原理如下图来自(https://github.com/imClumsyPanda/langchain-ChatGLM/tree/master) 所示，过程包括加载文件 -> 读取文本 -> 文本分割 -> 文本向量化 -> 问句向量化 -> 在文本向量中匹配出与问句向量最相似的`top k`个 -> 匹配出的文本作为上下文和问题一起添加到`prompt`中 -> 提交给`LLM`生成回答。
-
-![实现原理图](img/langchain+chatglm.png)
-
-## 变更日志
-2023.5.18 service层初步重构，部署后访问http://localhost:3000/api 即可查看接口文档.
-
-2023.5.11 项目引入Openai和Cohere接口，降低硬件要求 v0.2.5
-
-2023.5.7 项目完成初步设计v0.2.0
-
-2023.4.27 项目正式发布v0.1.0
-
-
-
-
-
-## 硬件需求
-- Openai或Cohere无硬件需求
-   
-   本项目已引入Openai与Cohere接口，使用apikey，无硬件要求。
-   
-   Cohere的embedding模型可以在线使用，注册门槛低且有免费试用额度，推荐尝试 https://dashboard.cohere.ai/api-keys
-   
-- ChatGLM-6B 模型硬件需求
-  
-    | **量化等级**   | **最低 GPU 显存**（推理） | **最低 GPU 显存**（高效参数微调） |
-    | -------------- | ------------------------- | --------------------------------- |
-    | FP16（无量化） | 13 GB                     | 14 GB                             |
-    | INT8           | 8 GB                     | 9 GB                             |
-    | INT4           | 6 GB                      | 7 GB                              |
-
-- Embedding 模型硬件需求
-
-    本项目选用的 Embedding 模型 [GanymedeNil/text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese/tree/main) 约占用显存 3GB，也可修改为在 CPU 中运行。
-
-
-## 开发部署
-
-### 软件需求
-
-Node18,Python 3
-
-### 如果本地已有模型：从本地加载模型
-
-请参考 [THUDM/ChatGLM-6B#从本地加载模型](https://github.com/THUDM/ChatGLM-6B#从本地加载模型)
-
-### 服务层(service)
-cd service
-安装依赖并启动
-- 项目下载\
-- 安装依赖
-    - yarn 
-- 运行
-  - pnpm start:dev 
-- 配置
-  - .env\
-    `在项目的根目录下，设置.env，EMBEDDING_SERVER_URL为embedding的ip地址,CHATGLM_6B_SERVER_URL为chatGLM-6B的ip地址`
-    
-### 模型层(models)    
-（如果不使用本地模型，请忽略此步骤）
-cd models
-
- - chatGLM-6B\
-    `cd ChatGLM-6B`
-    - pip install -r requirements.txt #建议走国内pip镜像源，比较快
-    - python api.py
-    
-  - embedding\
-    `cd ../embedding`
-    - python api.py # 依赖讲道理都可以在chatGLM-6B的依赖里
-
-### 前端(views)
-cd views
-
-pnpm i
-
-npm run dev
-
-### docker部署
-- 1. \
-  ```git clone https://github.com/fxjhello/langchain_chatglm_nest.git```
-- 2. \
-  ```cd langchain_chatglm_nest```
-- 3. \
-  ```cd service```\
-  ```docker build -t langchain_chatglm_nest:v1.0.0 -f ./dockerfile . # 打包```
-- 4. \
-  ```docker run -d --restart=always --name langchain_chatglm_nest-main  -p  51798:3000  langchain_chatglm_nest-main:1.0.0 #左边的端口随便取```
-### 提问
-- issues
-- 微信群\
-  欢迎大家提问，我们会补充文档和优化的
-## 鸣谢
-本项目的原理图，实现思路，以及Embedding 模型py封装，均来自(https://github.com/imClumsyPanda/langchain-ChatGLM/tree/master)
-
-## 路线图
-
-- [ ] Langchain 应用
-  - [x] 支持多种文档格式（已支持 pdf、docx、txt 文件格式）
-  - [ ] 搜索引擎与本地网页接入
-  - [ ] 结构化数据接入（如 csv、Excel、SQL 等）
-  - [ ] 知识图谱/图数据库接入
-  - [ ] 更多功能 实现
-- [ ] 增加更多 LLM 模型支持
-  - [x] [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
-- [ ] 增加更多 Embedding 模型支持
-  - [x] [GanymedeNil/text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)
-- [ ] 前端
-  - [x] 增加前端展示界面
+5. **管理员查看用户历史记录**  
+   实现管理员功能，允许管理员查看所有用户的交互历史记录，进行必要的审查和管理。

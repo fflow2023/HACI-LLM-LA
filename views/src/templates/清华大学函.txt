@@ -1,0 +1,61 @@
+请创建一个HTML模板，用于生成清华大学的正式函件。该模板应遵循以下格式和风格要求：1.行间距：各行之间大小应相等2.首行缩进：段落初始应有首行缩进2字符
+请确保整个文档的布局整洁、专业，并且符合清华大学官方文件的标准格式。以下是一个基本的HTML结构，您可以根据这个结构来填充具体内容：
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>清华大学文件</title>
+    <style>
+        body {
+            font-family: "宋体", serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
+            margin-top: 20px;
+        }
+        .red-line {
+            border-top: 2px solid red;
+            margin: 20px 0;
+        }
+        .document-number {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .content {
+            text-indent: 2em; /* 首行缩进 */
+            line-height: 1.6; /* 行间距 */
+            margin: 0 20px;
+        }
+        .footer {
+            text-align: right;
+            margin-right: 20px;
+            margin-top: 20px;
+        }
+        .page-number {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">山东大学文件</div>
+    <div class="red-line"></div>
+    <div class="document-number">校办发〔2024〕XX号</div>
+    <div class="content">
+        <p>根据学校发展需要，现对学校部分规章制度进行修订。请各部门认真组织学习，确保新制度的顺利实施。</p>
+        <p>为加强校园安全管理，学校决定从即日起实施新的出入校门管理规定。具体规定内容详见附件，请各部门遵照执行。</p>
+    </div>
+    <div class="footer">
+        清华大学校长办公室<br>
+        2024年3月XX日
+    </div>
+    <div class="page-number">第1/1页</div>
+</body>
+</html>

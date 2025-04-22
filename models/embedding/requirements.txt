@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+langchain_community
+torch
+transformers
+sentence_transformers
+langchain-huggingface

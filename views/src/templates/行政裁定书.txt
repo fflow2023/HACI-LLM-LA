@@ -1,0 +1,61 @@
+行政裁定书是指人民法院在审理行政诉讼案件以及执行过程中，为解决有关诉讼的程序问题而依法作出的书面处理决定。
+
+请依据下列结构化模板生成专业起草书，要求条款严谨、逻辑清晰，用html的格式返回一个文件：
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>行政裁定书</title>
+    <style>
+        body {
+            font-family: "宋体", sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: right;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>行政裁定书</h1>
+        <p>(年份) (法院名称) 行初字第XXX号</p>
+    </div>
+    <div class="content">
+        <p>原告：XXX，性别，出生日期，民族，职业，住址。</p>
+        <p>法定代表人：XXX，职务。</p>
+        <p>委托代理人：XXX，XXX律师事务所律师。</p>
+        <p>被告：XXX，住所地XXX。</p>
+        <p>法定代表人：XXX，职务。</p>
+        <p>委托代理人：XXX，XXX律师事务所律师。</p>
+        <p>第三人：XXX，性别，出生日期，民族，职业，住址。</p>
+        <p>法定代表人：XXX，职务。</p>
+        <p>委托代理人：XXX，XXX律师事务所律师。</p>
+        <p>原告XXX因不服被告XXX于XXXX年XX月XX日作出的XXX号具体行政行为，向本院提起行政诉讼。本院于XXXX年XX月XX日立案后，依法组成合议庭，于XXXX年XX月XX日公开开庭审理了本案。原告XXX及其委托代理人XXX，被告XXX及其委托代理人XXX，第三人XXX及其委托代理人XXX到庭参加诉讼。本案现已审理终结。</p>
+        <p>经审理查明，……（写明法院认定的事实和证据）。</p>
+        <p>本院认为，……（写明裁定的理由）。依照《中华人民共和国行政诉讼法》第XXX条之规定，裁定如下：</p>
+        <p>……（写明裁定结果）。</p>
+        <p>本裁定为终审裁定。</p>
+        <p>……（写明诉讼费用的负担）。</p>
+    </div>
+    <div class="footer">
+        <p>审判长：XXX</p>
+        <p>审判员：XXX</p>
+        <p>审判员：XXX</p>
+        <p>XXXX年XX月XX日</p>
+        <p>（院印）</p>
+        <p>本件与原本核对无异</p>
+        <p>书记员：XXX</p>
+    </div>
+</body>
+</html>

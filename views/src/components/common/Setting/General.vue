@@ -1,22 +1,23 @@
 <script lang="ts" setup>
-import { computed/* , ref */ } from 'vue'
-import { NButton, NPopconfirm, NSelect, useMessage } from 'naive-ui'
-import type { Language, Theme } from '@/store/modules/app/helper'
+// import { computed/* , ref */ } from 'vue'
+import { NButton, NPopconfirm, useMessage } from 'naive-ui'
+// import { NSelect} from 'naive-ui'
+// import type { Language, Theme } from '@/store/modules/app/helper'
 import { SvgIcon } from '@/components/common'
-import { useAppStore/* , useUserStore */ } from '@/store'
+// import { useAppStore/* , useUserStore */ } from '@/store'
 /* import type { UserInfo } from '@/store/modules/user/helper' */
 import { getCurrentDate } from '@/utils/functions'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
 
-const appStore = useAppStore()
+// const appStore = useAppStore()
 /* const userStore = useUserStore() */
 
 const { isMobile } = useBasicLayout()
 
 const ms = useMessage()
 
-const theme = computed(() => appStore.theme)
+// const theme = computed(() => appStore.theme)
 
 /* const userInfo = computed(() => userStore.userInfo) */
 
@@ -26,40 +27,40 @@ const name = ref(userInfo.value.name ?? '')
 
 const description = ref(userInfo.value.description ?? '') */
 
-const language = computed({
-  get() {
-    return appStore.language
-  },
-  set(value: Language) {
-    appStore.setLanguage(value)
-  },
-})
+// const language = computed({
+//   get() {
+//     return appStore.language
+//   },
+//   set(value: Language) {
+//     appStore.setLanguage(value)
+//   },
+// })
 
-const themeOptions: { label: string; key: Theme; icon: string }[] = [
-  /* {
-    label: 'Auto',
-    key: 'auto',
-    icon: 'ri:contrast-line',
-  }, */
-  {
-    label: 'Light',
-    key: 'light',
-    icon: 'ri:sun-foggy-line',
-  },
-  {
-    label: 'Dark',
-    key: 'dark',
-    icon: 'ri:moon-foggy-line',
-  },
-]
+// const themeOptions: { label: string; key: Theme; icon: string }[] = [
+//   /* {
+//     label: 'Auto',
+//     key: 'auto',
+//     icon: 'ri:contrast-line',
+//   }, */
+//   {
+//     label: 'Light',
+//     key: 'light',
+//     icon: 'ri:sun-foggy-line',
+//   },
+//   {
+//     label: 'Dark',
+//     key: 'dark',
+//     icon: 'ri:moon-foggy-line',
+//   },
+// ]
 
-const languageOptions: { label: string; key: Language; value: Language }[] = [
-  { label: '简体中文', key: 'zh-CN', value: 'zh-CN' },
-  { label: '繁體中文', key: 'zh-TW', value: 'zh-TW' },
-  { label: 'English', key: 'en-US', value: 'en-US' },
-  { label: '한국어', key: 'ko-KR', value: 'ko-KR' },
-  { label: 'Русский язык', key: 'ru-RU', value: 'ru-RU' },
-]
+// const languageOptions: { label: string; key: Language; value: Language }[] = [
+//   { label: '简体中文', key: 'zh-CN', value: 'zh-CN' },
+//   { label: '繁體中文', key: 'zh-TW', value: 'zh-TW' },
+//   { label: 'English', key: 'en-US', value: 'en-US' },
+//   { label: '한국어', key: 'ko-KR', value: 'ko-KR' },
+//   { label: 'Русский язык', key: 'ru-RU', value: 'ru-RU' },
+// ]
 
 /* function updateUserInfo(options: Partial<UserInfo>) {
   userStore.updateUserInfo(options)
@@ -187,7 +188,7 @@ function handleImportButtonClick(): void {
           </NPopconfirm>
         </div>
       </div>
-      <div class="flex items-center space-x-4">
+      <!-- <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.theme') }}</span>
         <div class="flex flex-wrap items-center gap-4">
           <template v-for="item of themeOptions" :key="item.key">
@@ -202,8 +203,8 @@ function handleImportButtonClick(): void {
             </NButton>
           </template>
         </div>
-      </div>
-      <div class="flex items-center space-x-4">
+      </div> -->
+      <!-- <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.language') }}</span>
         <div class="flex flex-wrap items-center gap-4">
           <NSelect
@@ -213,7 +214,7 @@ function handleImportButtonClick(): void {
             @update-value="value => appStore.setLanguage(value)"
           />
         </div>
-      </div>
+      </div> -->
       <!--  <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.resetUserInfo') }}</span>
         <NButton size="small" @click="handleReset">

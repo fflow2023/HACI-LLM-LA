@@ -582,18 +582,21 @@ async function onConversation3() {
             lastText += dataSources.value[dataSources.value.length - 1].text
 
 
-            // TODO: add the source url if active.value is true
-            if (active.value) {
-              lastText += "\n\n## 数据来源："
-              let urls = documentContent.data.url
+            // 提示知识库数据来源
+            // if (active.value) {
+            //   lastText += "\n\n## 数据来源："
+            //   let urls = documentContent.data.url
 
-              let uniqueUrls = [...new Set(urls)];
+            //   let uniqueUrls = [...new Set(urls)];
 
-              for (let i = 0; i < uniqueUrls.length; i++) {
-                let url_number = uniqueUrls.length > 1 ? `${i + 1}: ` : '';
-                lastText += `\n\n${url_number}[${uniqueUrls[i].split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${uniqueUrls[i]})`
-              }
-            }
+            //   for (let i = 0; i < uniqueUrls.length; i++) {
+            //     const fullPath = uniqueUrls[i].split('/static/')[1];
+            //     const fileName = fullPath.split('\\').pop();
+            //     let url_number = uniqueUrls.length > 1 ? `${i + 1}: ` : '';
+            //     lastText += `\n\n${url_number}${fileName}`;
+            //     // lastText += `\n\n${url_number}[${uniqueUrls[i].split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${uniqueUrls[i]})`
+            //   }
+            // }
 
             updateChat(
               +uuid,
@@ -1232,4 +1235,5 @@ const triggerFileInput = () => {
 .min-w-0 {
   min-width: 0;
 }
+
 </style>

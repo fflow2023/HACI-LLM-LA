@@ -3,7 +3,14 @@ import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { ChatLayout } from '@/views/chat/layout'
 import EditorView from '@/views/Editor/ContentEditor.vue'
+import AdminPanelView from '@/views/admin/AdminPanel.vue'
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: AdminPanelView ,
+    // meta: { requiresAuth: true, requiresAdmin: true }
+  },
   {
     path: '/editor', // 访问路径
     name: 'Editor',
@@ -55,6 +62,7 @@ export const router = createRouter({
 })
 
 // setupPageGuard(router)
+
 
 export async function setupRouter(app: App) {
   app.use(router)

@@ -497,7 +497,6 @@ async function onConversation3() {
 
   controller = new AbortController()
 
-
   scrollToBottom()
 
   loading.value = true
@@ -518,7 +517,11 @@ async function onConversation3() {
       inversion: false,
       error: false,
       conversationOptions: null,
-      requestOptions: { prompt: message, options: { ...options } },
+      requestOptions: { 
+        prompt: message, 
+        options: { ...options },
+        character: currentCharacter.value // 添加性格类型
+      },
     },
   )
   scrollToBottom()
@@ -529,7 +532,6 @@ async function onConversation3() {
       let stream = true
 
       if (stream) {
-
         interface DocumentContent {
           data: {
             content: string[];
@@ -547,7 +549,6 @@ async function onConversation3() {
             }
           })
 
-
           console.log("****", documentContent)
           // 2. add the prompt to the message
           let mergedContent = ''
@@ -564,6 +565,7 @@ async function onConversation3() {
           message: message,
           history: history.value,
           stream: stream,
+          character: currentCharacter.value // 添加性格类型
         });
 
         function step(value?: any) {
@@ -582,23 +584,6 @@ async function onConversation3() {
           } else {
             loading.value = false;
             lastText += dataSources.value[dataSources.value.length - 1].text
-
-
-            // 提示知识库数据来源
-            // if (active.value) {
-            //   lastText += "\n\n## 数据来源："
-            //   let urls = documentContent.data.url
-
-            //   let uniqueUrls = [...new Set(urls)];
-
-            //   for (let i = 0; i < uniqueUrls.length; i++) {
-            //     const fullPath = uniqueUrls[i].split('/static/')[1];
-            //     const fileName = fullPath.split('\\').pop();
-            //     let url_number = uniqueUrls.length > 1 ? `${i + 1}: ` : '';
-            //     lastText += `\n\n${url_number}${fileName}`;
-            //     // lastText += `\n\n${url_number}[${uniqueUrls[i].split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${uniqueUrls[i]})`
-            //   }
-            // }
 
             updateChat(
               +uuid,
@@ -622,26 +607,6 @@ async function onConversation3() {
         let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
         lastText += result
       }
-
-      // const fullText = '这是一个模拟流式生成的示例，文本会逐步显示在页面上。';
-      // let index = 0;
-      // let tmp = "";
-
-      // async function simulateStreaming() {
-      // 	while (index < fullText.length) {
-      // 		await new Promise(resolve => setTimeout(resolve, 100)); // 模拟异步返回
-      // 		tmp += fullText[index]; // 逐步添加字符
-      // 		index++;
-      // 		dataSources.value[dataSources.value.length - 1].text = tmp + "●";
-
-      // 		console.log(tmp); // 输出到控制台，模拟逐步返回
-      // 	}
-      // 	dataSources.value[dataSources.value.length - 1].text = tmp;
-      // }
-
-      // // 调用模拟流式生成的函数
-      // simulateStreaming();
-
 
       updateChat(
         +uuid,
@@ -1122,9 +1087,11 @@ const characterOptions = [
 
 // 处理性格变更
 const handleCharacterChange = (value: CharacterType) => {
+  console.log('Character changed to:', value) // 添加日志
   setCurrentCharacter(value)
   if (uuid) {
     chatStore.updateHistory(uuid, { character: value })
+    console.log('History updated with character:', value) // 添加日志
   }
 }
 

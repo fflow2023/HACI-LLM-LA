@@ -7,7 +7,11 @@ declare namespace Chat {
 		error?: boolean
 		loading?: boolean
 		conversationOptions?: ConversationRequest | null
-		requestOptions: { prompt: string; options?: ConversationRequest | null }
+		requestOptions: { 
+			prompt: string; 
+			options?: ConversationRequest | null;
+			character?: string;
+		}
 		// 新增附件类型
 		attachments?: Array<{
 			name: string
@@ -21,13 +25,19 @@ declare namespace Chat {
 		isEdit: boolean
 		uuid: number
 		character: string
+		characterDescription: string
 	}
 
 	interface ChatState {
 		active: number | null
 		usingContext: boolean;
 		history: History[]
-		chat: { uuid: number; data: Chat[] }[]
+		chat: { 
+			uuid: number; 
+			data: Chat[];
+			character: string;
+			characterDescription: string;
+		}[]
 	}
 
 	interface ConversationRequest {

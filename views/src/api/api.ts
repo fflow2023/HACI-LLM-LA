@@ -54,16 +54,22 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	
 	// 获取性格类型
 	const character = postparams['character'] as CharacterType || 'strict'
+	console.log('Selected character:', character) // 添加日志
+	
 	const characterInfo = characterPrompts[character]
+	console.log('Character info:', characterInfo) // 添加日志
 	
 	// 获取静态系统提示词
 	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
 	
 	// 获取动态性格提示词
 	const characterPrompt = characterInfo.prompt
+	console.log('Character prompt:', characterPrompt) // 添加日志
 	
 	// 组合系统提示词
 	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
+	console.log('Final system prompt:', systemPrompt) // 添加日志
 	
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]
@@ -200,16 +206,22 @@ export function* fetchStreamData(postparams: postParams) {
 	
 	// 获取性格类型
 	const character = postparams['character'] as CharacterType || 'strict'
+	console.log('Selected character:', character) // 添加日志
+	
 	const characterInfo = characterPrompts[character]
+	console.log('Character info:', characterInfo) // 添加日志
 	
 	// 获取静态系统提示词
 	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
 	
 	// 获取动态性格提示词
 	const characterPrompt = characterInfo.prompt
+	console.log('Character prompt:', characterPrompt) // 添加日志
 	
 	// 组合系统提示词
 	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
+	console.log('Final system prompt:', systemPrompt) // 添加日志
 	
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]

@@ -1,9 +1,16 @@
 import request from './axios'
 import { getHistoryList } from './tools'
 import axios from 'axios';
+import { characterPrompts, CharacterType, RoleType } from '../templates/characterPrompts';
 
 const { post } = axios;
 
+// 静态系统提示词
+const staticSystemPrompts = {
+	teacher: `你是一位在东北大学秦皇岛分校人工智能领域有着深厚学术造诣和丰富教学经验的专家，熟悉该分校的教学体系和学生的学习特点，能够为学生提供针对性的学习支持。你具备人工智能核心理论知识，包括机器学习、深度学习、自然语言处理等，同时掌握教学设计、学习策略制定和问题解决能力，能够结合实际案例进行讲解。为东北大学秦皇岛分校的学生提供专业的人工智能学习指导，帮助他们理解复杂概念，解决学习难题，提升学习效果，并培养他们的创新思维和实践能力。`,
+
+	student: `你是一位东北大学秦皇岛分校的学生，正在学习人工智能相关课程。你具备一定的编程基础和学习能力，对人工智能领域充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释复杂概念。你的目标是帮助其他同学更好地理解人工智能知识，共同进步。`
+};
 
 export const api = async (data: object): Promise<any> => {
 	return await request({
@@ -15,6 +22,7 @@ interface postParams {
 	message: string,
 	history: string[][],
 	stream: boolean,
+	character?: CharacterType, // 添加性格类型参数
 }
 
 interface remoteapiParams {
@@ -35,7 +43,7 @@ let max_tokens_base: MaxTokensBase = {
 	"Qwen/QwQ-32B": 8192,
 }
 
-// 仿照之前的接口，写成异步的函数，支持silicon flow的接口
+// 修改remoteapi函数
 export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	let kind = params['kind']
 	let base = params['base']
@@ -43,21 +51,21 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	let postparams = params['postparams']
 	let stream = postparams['stream']
 	let historylist = getHistoryList(params['postparams']['history'])
-	let systempormpt = [{ content: `
-		您好，我需要您帮我撰写一份起诉书。在开始写作之前，请确保已经收集到所有必要的信息。如果有信息不完整，您可以多次询问，直到所有信息都确认无误。
-		以下是起诉书的基本结构，您需要确保格式规范：
-		标题：应明确标明“起诉书”。
-		案件编号：如果已有案件编号，提供案件编号；如果没有，请跳过此项。
-		原告信息：包括姓名（或公司名称）、性别（或法人代表）、年龄（或公司成立时间）、住址（或公司地址）、联系方式等。
-		被告信息：包括姓名（或公司名称）、性别（或法人代表）、年龄（或公司成立时间）、住址（或公司地址）、联系方式等。
-		案件事实：详细叙述案件发生的经过，包括所有相关的时间、地点、人物及事件背景。
-		诉讼请求：明确您希望法院作出的判决或裁定，包括赔偿金额、行为的停止或其他要求。
-		证据清单：列出所有您打算提交的证据，包括但不限于书面证据、照片、视频、音频记录等。
-		法律依据：请引用相关法律条文或条例，说明您的诉讼请求符合哪些法律规定。如果可以，请明确指出根据什么文件什么条目，这样的引用字眼（适用法条等具体信息的索引）
-		原告签字：原告（或代表律师）签字并注明日期。
-		请在每个部分逐一询问相关信息，确保内容完整并符合规范后再开始起草起诉书。
-		`, role: 'system'
-	}]
+	
+	// 获取性格类型
+	const character = postparams['character'] as CharacterType || 'strict'
+	const characterInfo = characterPrompts[character]
+	
+	// 获取静态系统提示词
+	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	
+	// 获取动态性格提示词
+	const characterPrompt = characterInfo.prompt
+	
+	// 组合系统提示词
+	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
+	
+	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]
 
 	// 目前暂时只实现一种情况
@@ -185,24 +193,25 @@ interface ChunkJson {
     choices: Choice[];
 }
 
-// 通过生成器来处理流式数据
+// 修改fetchStreamData函数
 export function* fetchStreamData(postparams: postParams) {
 	let stream = postparams['stream']
 	let historylist = getHistoryList(postparams['history'])
-	let systempormpt = [{ content: `
-		您好，我需要您帮我撰写一份起诉书。在开始写作之前，请确保已经收集到所有必要的信息。如果有信息不完整，您可以多次询问，直到所有信息都确认无误。
-		以下是起诉书的基本结构，您需要确保格式规范：
-		标题：应明确标明“起诉书”。
-		案件编号：如果已有案件编号，提供案件编号；如果没有，请跳过此项。
-		原告信息：包括姓名（或公司名称）、性别（或法人代表）、年龄（或公司成立时间）、住址（或公司地址）、联系方式等。
-		被告信息：包括姓名（或公司名称）、性别（或法人代表）、年龄（或公司成立时间）、住址（或公司地址）、联系方式等。
-		案件事实：详细叙述案件发生的经过，包括所有相关的时间、地点、人物及事件背景。
-		诉讼请求：明确您希望法院作出的判决或裁定，包括赔偿金额、行为的停止或其他要求。
-		证据清单：列出所有您打算提交的证据，包括但不限于书面证据、照片、视频、音频记录等。
-		法律依据：请引用相关法律条文或条例，说明您的诉讼请求符合哪些法律规定。如果可以，请明确指出根据什么文件什么条目，这样的引用字眼（适用法条等具体信息的索引）
-		原告签字：原告（或代表律师）签字并注明日期。
-		请在每个部分逐一询问相关信息，确保内容完整并符合规范后再开始起草起诉书。
-		`, role: 'system' }]
+	
+	// 获取性格类型
+	const character = postparams['character'] as CharacterType || 'strict'
+	const characterInfo = characterPrompts[character]
+	
+	// 获取静态系统提示词
+	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	
+	// 获取动态性格提示词
+	const characterPrompt = characterInfo.prompt
+	
+	// 组合系统提示词
+	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
+	
+	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]
 
 

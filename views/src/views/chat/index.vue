@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage } from 'naive-ui'
+import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect } from 'naive-ui'
 import html2canvas from 'html2canvas'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
@@ -18,6 +18,8 @@ import { chat, chatOpenAI, chatSiliconflow, chatfile, chatfileOpenai, chatfileCo
 import { fetchStreamData } from '@/api/api'
 
 import { modelsStore } from '@/store/modules/models/models-setting'
+import { useCharacter } from '@/hooks/useCharacter'
+import { characterPrompts, CharacterType } from '@/templates/characterPrompts'
 let controller = new AbortController()
 
 // 父组件新增挂载模板逻辑
@@ -1108,6 +1110,24 @@ const triggerFileInput = () => {
   fileInputRef.value?.click()
 }
 
+const { currentCharacter, setCurrentCharacter } = useCharacter()
+
+// 性格选项
+const characterOptions = [
+  { label: '严厉型（教师角色）', value: 'strict' },
+  { label: '鼓励型（教师角色）', value: 'encouraging' },
+  { label: '学霸领学型（同学角色）', value: 'topStudent' },
+  { label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' }
+]
+
+// 处理性格变更
+const handleCharacterChange = (value: CharacterType) => {
+  setCurrentCharacter(value)
+  if (uuid) {
+    chatStore.updateHistory(uuid, { character: value })
+  }
+}
+
 </script>
 
 <template>
@@ -1118,6 +1138,16 @@ const triggerFileInput = () => {
       <div id="scrollRef" ref="scrollRef" class="h-full overflow-hidden overflow-y-auto">
         <div id="image-wrapper" class="w-full max-w-screen-xl m-auto dark:bg-[#101014]"
           :class="[isMobile ? 'p-2' : 'p-4']">
+          <div class="flex items-center justify-between p-4 border-b dark:border-neutral-800">
+            <div class="flex items-center space-x-4">
+              <NSelect
+                v-model:value="currentCharacter"
+                :options="characterOptions"
+                :placeholder="$t('chat.selectCharacter')"
+                @update:value="handleCharacterChange"
+              />
+            </div>
+          </div>
           <template v-if="!dataSources.length">
             <div class="flex items-center justify-center mt-4 text-center text-neutral-300">
               <SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl" />
@@ -1163,11 +1193,6 @@ const triggerFileInput = () => {
         <div class="flex items-center justify-between space-x-2">
           <!-- 左侧功能按钮组 -->
           <div class="flex items-center space-x-2">
-            <NSwitch v-model:value="active" class="flex-shrink-0 w-20">
-              <template #checked>知识库</template>
-              <template #unchecked>知识库&nbsp;&nbsp;</template>
-            </NSwitch>
-
             <HoverButton @click="handleClear" class="flex-shrink-0">
               <span class="text-xl text-[#4f555e] dark:text-white">
                 <SvgIcon icon="ri:delete-bin-line" />

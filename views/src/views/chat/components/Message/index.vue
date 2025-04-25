@@ -60,11 +60,6 @@ const options = computed(() => {
       key: 'delete',
       icon: iconRender({ icon: 'ri:delete-bin-line' }),
     },
-    {
-      label: t('chat.editInEditor'),
-      key: 'editInDoc',
-      icon: iconRender({ icon: 'ri:edit-box-line' }),
-    },
   ]
 
   if (!props.inversion) {
@@ -78,7 +73,7 @@ const options = computed(() => {
   return common
 })
 
-function handleSelect(key: 'copyText' | 'delete' | 'toggleRenderType' | 'editInDoc') {
+function handleSelect(key: 'copyText' | 'delete' | 'toggleRenderType') {
   switch (key) {
     case 'copyText':
       handleCopy()
@@ -88,9 +83,6 @@ function handleSelect(key: 'copyText' | 'delete' | 'toggleRenderType' | 'editInD
       return
     case 'delete':
       emit('delete')
-      return
-    case 'editInDoc':
-      showTemplateModal.value = true
       return
   }
 }
@@ -110,37 +102,6 @@ async function handleCopy() {
   }
 }
 
-// 新增状态
-const showTemplateModal = ref(false)
-
-// 处理模板选择 ?
-function handleTemplateSelect(templateName: string) {
-  const template = props.templates?.find(t => t.name === templateName)
-  if (template && props.text) {
-    // 控制台调试
-    console.log('[Debug] Selected Content:', {
-      message: props.text || '',
-      prompt: template.prompt
-    })
-
-    // 存储到Pinia
-    editorStore.setDraft(props.text || '', template.prompt)
-
-    // 导航到编辑页
-    router.push({
-      name: 'Generator',
-      query: {
-        ts: Date.now() // 防止路由缓存
-      },
-      state: {
-        fromChat: true,
-        timestamp: Date.now()
-      }
-    })
-
-  }
-  showTemplateModal.value = false
-}
 const showAttachmentDetail = ref(false)
 const selectedAttachment = ref<{ name: string; content: string } | null>(null)
 
@@ -162,26 +123,6 @@ function handleAttachmentSelect(key: string) {
 
 <template>
   <div>
-    <!-- 模板选择模态框 -->
-    <n-modal v-model:show="showTemplateModal" title="选择模板" preset="card" style="max-width: 500px;" :bordered="false"
-      title-style="background: linear-gradient(135deg, #6b8dd6 0%, #8e37d7 100%);color: white;border-radius: 8px;padding: 12px 20px;">
-      <n-list class="template-list">
-        <n-list-item v-for="template in templates" :key="template.name" clickable
-          @click="handleTemplateSelect(template.name)" class="template-item">
-          <div class="template-item__hover-wrapper">
-            <n-thing :title="template.name" :content="template.preview" content-style="white-space: pre-wrap;"
-              title-style="color: #4a5568;font-weight: 600;">
-              <template #avatar>
-                <div class="template-icon">
-                  <SvgIcon icon="ri:file-text-line" class="text-blue-500" />
-                </div>
-              </template>
-            </n-thing>
-          </div>
-        </n-list-item>
-      </n-list>
-    </n-modal>
-
     <!-- 附件详情模态框 -->
     <NModal v-model:show="showAttachmentDetail">
       <NCard style="width: 600px; max-width: 90vw" :title="selectedAttachment?.name" :bordered="false" size="huge">
@@ -227,8 +168,6 @@ function handleAttachmentSelect(key: string) {
                   <SvgIcon icon="ri:more-2-fill" class="text-[1.1em]" />
                 </HoverButton>
               </NDropdown>
-
-
             </div>
           </div>
         </div>

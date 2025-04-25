@@ -49,7 +49,6 @@ export default {
     clearHistoryConfirm: 'Are you sure to clear chat history?',
     preview: 'Preview',
     showRawText: 'Show as raw text',
-    editInEditor: 'Edit in document',
   },
   setting: {
     setting: 'Setting',

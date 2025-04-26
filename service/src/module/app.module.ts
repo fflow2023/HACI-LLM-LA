@@ -31,7 +31,7 @@ import { JwtModule } from '@nestjs/jwt';
       logger: 'advanced-console',
       autoLoadEntities: true,
       entities: [join(__dirname, '../auth/entities/*.entity{.ts,.js}')],
-      synchronize: false,
+      synchronize: true,
 
       // MySQL需要以下额外配置
       charset: 'utf8mb4',

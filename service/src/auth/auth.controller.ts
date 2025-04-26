@@ -11,6 +11,7 @@ import { Public } from './decorators/public.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('register')
   @ApiOperation({ summary: '用户注册' })
   @ApiResponse({ status: 201, description: '注册成功' })

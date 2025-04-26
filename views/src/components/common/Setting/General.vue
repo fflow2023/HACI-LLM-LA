@@ -76,7 +76,43 @@ function handleReset() {
 function exportData(): void {
   const date = getCurrentDate()
   const data: string = localStorage.getItem('chatStorage') || '{}'
-  const jsonString: string = JSON.stringify(JSON.parse(data), null, 2)
+  const parsedData = JSON.parse(data)
+  
+  // 添加性格类型信息到导出数据
+  const characterInfo = {
+    strict: '严厉型（教师角色）',
+    encouraging: '鼓励型（教师角色）',
+    topStudent: '学霸领学型（同学角色）',
+    strugglingStudent: '学渣共同进步型（同学角色）'
+  }
+  
+  // 为每个历史记录添加性格类型描述
+  if (parsedData.history) {
+    parsedData.history = parsedData.history.map((item: any) => ({
+      ...item,
+      characterDescription: characterInfo[item.character as keyof typeof characterInfo] || '未知性格类型'
+    }))
+  }
+  
+  // 为每个聊天记录添加性格类型信息
+  if (parsedData.chat) {
+    parsedData.chat = parsedData.chat.map((chatItem: any) => {
+      // 找到对应的历史记录
+      const historyItem = parsedData.history.find((h: any) => h.uuid === chatItem.uuid)
+      return {
+        ...chatItem,
+        character: historyItem?.character || 'strict',
+        characterDescription: historyItem?.characterDescription || '未知性格类型',
+        data: chatItem.data.map((message: any) => ({
+          ...message,
+          character: historyItem?.character || 'strict',
+          characterDescription: historyItem?.characterDescription || '未知性格类型'
+        }))
+      }
+    })
+  }
+  
+  const jsonString: string = JSON.stringify(parsedData, null, 2)
   const blob: Blob = new Blob([jsonString], { type: 'application/json' })
   const url: string = URL.createObjectURL(blob)
   const link: HTMLAnchorElement = document.createElement('a')

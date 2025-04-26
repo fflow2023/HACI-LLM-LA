@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
 import { getLocalState, setLocalState } from './helper'
 import { router } from '@/router'
+import { CharacterType } from '@/templates/characterPrompts'
+
+const characterInfo = {
+  strict: '严厉型（教师角色）',
+  encouraging: '鼓励型（教师角色）',
+  topStudent: '学霸领学型（同学角色）',
+  strugglingStudent: '学渣共同进步型（同学角色）'
+}
 
 export const useChatStore = defineStore('chat-store', {
   state: (): Chat.ChatState => getLocalState(),
@@ -29,8 +37,22 @@ export const useChatStore = defineStore('chat-store', {
     },
 
     addHistory(history: Chat.History, chatData: Chat.Chat[] = []) {
-      this.history.unshift(history)
-      this.chat.unshift({ uuid: history.uuid, data: chatData })
+      const character = history.character as CharacterType || 'strict'
+      const characterDescription = characterInfo[character] || '未知性格类型'
+      
+      this.history.unshift({
+        ...history,
+        character,
+        characterDescription
+      })
+      
+      this.chat.unshift({ 
+        uuid: history.uuid, 
+        data: chatData,
+        character,
+        characterDescription
+      })
+      
       this.active = history.uuid
       this.reloadRoute(history.uuid)
     },
@@ -38,7 +60,26 @@ export const useChatStore = defineStore('chat-store', {
     updateHistory(uuid: number, edit: Partial<Chat.History>) {
       const index = this.history.findIndex(item => item.uuid === uuid)
       if (index !== -1) {
-        this.history[index] = { ...this.history[index], ...edit }
+        const character = edit.character as CharacterType || this.history[index].character
+        const characterDescription = characterInfo[character] || '未知性格类型'
+        
+        this.history[index] = { 
+          ...this.history[index], 
+          ...edit,
+          character,
+          characterDescription
+        }
+        
+        // 同时更新对应的聊天记录
+        const chatIndex = this.chat.findIndex(item => item.uuid === uuid)
+        if (chatIndex !== -1) {
+          this.chat[chatIndex] = {
+            ...this.chat[chatIndex],
+            character,
+            characterDescription
+          }
+        }
+        
         this.recordState()
       }
     },
@@ -96,8 +137,24 @@ export const useChatStore = defineStore('chat-store', {
       if (!uuid || uuid === 0) {
         if (this.history.length === 0) {
           const uuid = Date.now()
-          this.history.push({ uuid, title: chat.text, isEdit: false })
-          this.chat.push({ uuid, data: [chat] })
+          const character = 'strict' as CharacterType
+          const characterDescription = characterInfo[character]
+          
+          this.history.push({ 
+            uuid, 
+            title: chat.text, 
+            isEdit: false,
+            character,
+            characterDescription
+          })
+          
+          this.chat.push({ 
+            uuid, 
+            data: [chat],
+            character,
+            characterDescription
+          })
+          
           this.active = uuid
           this.recordState()
         }

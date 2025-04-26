@@ -15,7 +15,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@views/*": ["src/views/*"]
     },
     "types": ["vite/client", "node", "naive-ui/volar"]
   },

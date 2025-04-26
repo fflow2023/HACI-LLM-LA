@@ -1,32 +1,34 @@
-import axios, { type AxiosResponse } from 'axios'
-import { useAuthStore } from '@/store'
+import axios, {
+  type AxiosInstance,
+} from 'axios';
 
-const service = axios.create({
-  baseURL: import.meta.env.VITE_GLOB_API_URL,
-})
+// 创建强类型实例
+const service: AxiosInstance = axios.create({
+  baseURL: 'http://localhost:3000',
+  timeout: 5000,
+  withCredentials: true
+});
 
-service.interceptors.request.use(
-  (config) => {
-    const token = useAuthStore().token
-    if (token)
-      config.headers.Authorization = `Bearer ${token}`
-    return config
-  },
-  (error) => {
-    return Promise.reject(error.response)
-  },
-)
+// 请求拦截器
+service.interceptors.request.use(config => {
+  // ✅ 自动附加 Token（已登录用户后续请求需要）
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
+// 响应拦截器（关键修改）
 service.interceptors.response.use(
-  (response: AxiosResponse): AxiosResponse => {
-    if (response.status === 200)
-      return response
-
-    throw new Error(response.status.toString())
+  response => {
+    // ✅ 统一剥离响应包装层
+    return response.data.data; 
   },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
+  error => {
+    // ✅ 统一处理 HTTP 错误
+    return Promise.reject(error.response?.data || error.message);
+  }
+);
 
-export default service
+export default service;

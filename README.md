@@ -102,6 +102,9 @@
   OPENAI_API_KEY=xxxx
   COHERE_API_KEY=WrJWnnCOXit1EiZ3eGvIoeqK3tPvnWyOp55oeSxW
 
+  #前端地址
+  ALLOWED_ORIGINS=http://localhost:1002,http://172.22.80.1:1002
+
   # Database
   DB_HOST=localhost
   DB_PORT=3306

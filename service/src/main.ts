@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import { getLocalIP } from './common/network-helper'; // 将网络功能抽离
 import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config'
 
 // 加载环境变量（优先级高于系统环境变量）
 dotenv.config({ path: '.env' });
@@ -22,17 +23,31 @@ async function bootstrap() {
     })
   );
 
-  // 跨域配置
+  const configService = app.get(ConfigService)
+
+  const allowedOrigins = configService
+    .get('ALLOWED_ORIGINS')
+    .split(',')
+    .map(origin => origin.trim())
+
   app.enableCors({
-    origin: [
-      'http://localhost:1002', // 前端实际运行端口
-      'http://172.22.80.1:1002',
-      'http://172.30.217.12:1002'
-    ],
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
-  });
+  })
+
+  // // 跨域配置
+  // app.enableCors({
+  //   origin: [
+  //     'http://localhost:1002', // 前端实际运行端口
+  //     'http://172.22.80.1:1002',
+  //     'http://172.30.217.12:1002'
+  //   ],
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   allowedHeaders: ['Content-Type', 'Authorization'],
+  //   credentials: true
+  // });
 
   // Swagger 文档配置（增强安全方案）
   const config = new DocumentBuilder()

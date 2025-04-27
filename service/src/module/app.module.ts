@@ -17,7 +17,10 @@ import { JwtModule } from '@nestjs/jwt';
 @Module({
   imports: [
     // 环境变量配置（必须放在最前面）
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({  
+      isGlobal: true,
+      envFilePath: '.env'  
+    }),
 
     // 数据库配置
     TypeOrmModule.forRoot({

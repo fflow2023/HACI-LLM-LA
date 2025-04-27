@@ -1,3 +1,4 @@
+//HACI-LLM-LA\service\src\controller\app.controller.ts
 import {
   Body,
   Controller,
@@ -18,6 +19,7 @@ import { FileDeleteDto, FileUploadDto, searchDto } from 'src/dto/file.dto';
 import { ChatGlmDto, ChatGptDto, SetEmbeddingDto } from 'src/dto/chat.dto';
 import { FileService } from '../service/file'; // 添加文件服务依赖
 import { memoryStorage } from 'multer';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 
 
@@ -36,6 +38,7 @@ export class AppController {
   }
 }))
 
+@Public() 
 @Post('file/parse')
 async parseFile(@UploadedFile() file: Express.Multer.File) {
   if (!file || file.size === 0) {

@@ -9,6 +9,7 @@ export function useChat() {
 
   const addChat = (uuid: number, chat: Chat.Chat) => {
     chatStore.addChatByUuid(uuid, chat)
+
   }
 
   const updateChat = (uuid: number, index: number, chat: Chat.Chat) => {

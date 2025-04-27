@@ -180,7 +180,7 @@ export class FileService {
             const text = await ocrService.extractText(imgPath);
             results.push(text);
           }
-          return results.join('\n');
+          return '(OCR识别内容)\n' + results.join('\n');
         } finally {
           // 清理生成的图片文件
           imagePaths.forEach(imgPath => fs.rmSync(imgPath));
@@ -190,7 +190,8 @@ export class FileService {
       }
   
       // 单图像处理
-      return await ocrService.extractText(filePath);
+      const singleImageText = await ocrService.extractText(filePath);
+      return '(OCR识别内容)\n' + singleImageText;
     } catch (error) {
       throw new Error(`OCR 处理失败: ${error.message}`);
     } finally {

@@ -8,7 +8,9 @@ class OCRService {
   async start() {
     if (!this.worker) {
       try {
+
         this.worker = await createWorker('chi_sim', OEM.DEFAULT, {
+          langPath: 'src/service/traineddata',
           cachePath: './traineddata',
           cacheMethod: 'none',
           logger: (info) => console.log(`[Tesseract] ${info.status}: ${info.progress}`),

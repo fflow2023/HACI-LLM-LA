@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect } from 'naive-ui'
+import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect, NTooltip } from 'naive-ui'
 import html2canvas from 'html2canvas'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
@@ -22,42 +22,44 @@ import { useCharacter } from '@/hooks/useCharacter'
 import { characterPrompts, CharacterType } from '@/templates/characterPrompts'
 let controller = new AbortController()
 
-// 父组件新增挂载模板逻辑
-const templates = ref<Array<{ name: string, prompt: string, preview: string, }>>([])
+// 以下为文本编辑器相关内容👇
+{
+  const templates = ref<Array<{ name: string, prompt: string, preview: string, }>>([])
 
-const loadTemplates = async () => {
-  try {
-    const modules = import.meta.glob('@/templates/*.txt', {
-      as: 'raw',
-      eager: true
-    })
+  const loadTemplates = async () => {
+    try {
+      const modules = import.meta.glob('@/templates/*.txt', {
+        as: 'raw',
+        eager: true
+      })
 
-    templates.value = Object.entries(modules).map(([path, content]) => {
-      // 从文件路径提取模板名称
-      const fullFileName = path.split('/').pop() || ''
-      const fileName = fullFileName.replace(/\\/g, '/').split('/').pop() || '';
-      const firstLine = content.split('\n')[0].trim()
-      const preview = firstLine.length > 30 ? firstLine.slice(0, 30) + '...' : firstLine;
-      return {
-        name: fileName, // 直接使用文件名作为显示名称
-        prompt: content,
-        preview: preview  //选取prompt第一行作为预览
-      }
-    })
+      templates.value = Object.entries(modules).map(([path, content]) => {
+        // 从文件路径提取模板名称
+        const fullFileName = path.split('/').pop() || ''
+        const fileName = fullFileName.replace(/\\/g, '/').split('/').pop() || '';
+        const firstLine = content.split('\n')[0].trim()
+        const preview = firstLine.length > 30 ? firstLine.slice(0, 30) + '...' : firstLine;
+        return {
+          name: fileName, // 直接使用文件名作为显示名称
+          prompt: content,
+          preview: preview  //选取prompt第一行作为预览
+        }
+      })
+    }
+
+    catch (error) {
+      console.error('加载模板失败:', error)
+      ms.error('模板加载失败，请检查模板文件')
+    }
   }
 
-  catch (error) {
-    console.error('加载模板失败:', error)
-    ms.error('模板加载失败，请检查模板文件')
-  }
+  // 挂载时加载模板
+  onMounted(() => {
+    loadTemplates()
+    console.log('[Debug] chat挂载模板成功 ', {})
+  })
+  // 以上为文本编辑器相关内容👆
 }
-
-// 挂载时加载模板
-onMounted(() => {
-  loadTemplates()
-  console.log('[Debug] chat挂载模板成功 ', {})
-
-})
 
 // const openLongReply = import.meta.env.VITE_GLOB_OPEN_LONG_REPLY === 'true'
 
@@ -99,7 +101,7 @@ dataSources.value.forEach((item, index) => {
     updateChatSome(+uuid, index, { loading: false })
 })
 
-// 修改后的handleSubmit函数
+// 发送对话-提交
 function handleSubmit() {
   const originalText = prompt.value
 
@@ -112,8 +114,8 @@ function handleSubmit() {
 
   // 生成API请求的合并消息
   const message = attachmentInfo
-    ? `以下是一些附件信息：\n\n${attachmentInfo}\n\n用户问题：${originalText}`
-    : originalText;
+    ? `用户问题：${originalText} \n\n (以下是用户提交的附件)：\n${attachmentInfo} `
+    : `用户问题：${originalText}`;
 
   // 仅添加一次用户输入
   addChat(
@@ -148,6 +150,215 @@ function handleSubmit() {
     onConversation3()
   }
 }
+
+// 延续接口，silicon flow的接口用onConversation3函数实现
+async function onConversation3() {
+  // 获取最新的用户输入（dataSources长度-1是刚添加的用户消息）
+  const lastUserMsg = dataSources.value[dataSources.value.length - 1]
+  let message = lastUserMsg?.requestOptions?.prompt || ''  //message就是刚刚的版合并消息
+  console.log('[DEBUG]message:\n' + message);
+
+  // 更新上下文处理逻辑
+  if (usingContext.value) {
+    // 仅处理用户消息（过滤AI回复）
+    const userMessages = dataSources.value.filter(item => item.inversion)
+    history.value = userMessages.map((msg, index) => [
+      // `Human:${msg.text}`,  //只将用户的原始输入内容保存到历史记录中
+      `Human:${msg.requestOptions.prompt}`,  //在历史记录中附带保留附件内容
+
+
+      dataSources.value[index * 2 + 1]?.text.split('\n\n数据来源：\n\n')[0] || ''
+    ])
+  } else {
+    history.value = []
+  }
+
+  controller = new AbortController()
+
+  scrollToBottom()
+
+  loading.value = true
+  prompt.value = ''
+
+  let options: Chat.ConversationRequest = {}
+  const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+
+  if (lastContext && usingContext.value)
+    options = { ...lastContext }
+
+  addChat(
+    +uuid,
+    {
+      dateTime: new Date().toLocaleString(),
+      text: '',
+      loading: true,
+      inversion: false,
+      error: false,
+      conversationOptions: null,
+      requestOptions: {
+        prompt: message,
+        options: { ...options },
+        character: currentCharacter.value // 添加性格类型
+      },
+    },
+  )
+  scrollToBottom()
+
+  try {
+    let lastText = ''
+    const fetchChatAPIOnce = async () => {
+      let stream = true
+
+      if (stream) {
+        interface DocumentContent {
+          data: {
+            content: string[];
+            url: string;
+          };
+        }
+
+        let documentContent: DocumentContent;
+        if (active.value) {
+          // 1. get the document content
+          documentContent = await chatfileContent({
+            message: message,
+            hyperparameters: {
+              document_number: 2,
+            }
+          })
+
+          console.log("****", documentContent)
+          // 2. add the prompt to the message
+          let mergedContent = ''
+          for (let i = 0; i < documentContent.data.content.length; i++) {
+            mergedContent += `第${i + 1}份参考资料：` + documentContent.data.content[i]
+          }
+
+          console.log("referenced content: ", mergedContent)
+
+          message = `请根据以下参考资料回答问题：\n\n${mergedContent}\n\n 用户的输入：${message}`
+        }
+
+        const gen = fetchStreamData({
+          message: message,
+          history: history.value,
+          stream: stream,
+          character: currentCharacter.value // 添加性格类型
+        });
+
+        function step(value?: any) {
+          const result = gen.next(value);
+
+          if (!result.done) {
+            // 检查 result.value 是否为 Promise，若是则等待其完成，否则直接打印
+            if (result.value instanceof Promise) {
+              result.value.then(data => step(data)).catch(err => gen.throw(err));
+            } else {
+              dataSources.value[dataSources.value.length - 1].text += result.value;
+
+              step(); // 继续执行生成器
+              scrollToBottomIfAtBottom()
+            }
+          } else {
+            loading.value = false;
+            lastText += dataSources.value[dataSources.value.length - 1].text
+
+            updateChat(
+              +uuid,
+              dataSources.value.length - 1,
+              {
+                dateTime: new Date().toLocaleString(),
+                text: lastText,
+                inversion: false,
+                error: false,
+                loading: false,
+                conversationOptions: null,
+                requestOptions: { prompt: message, options: { ...options } },
+              },
+            )
+          }
+        }
+        loading.value = true;
+        step();
+      } else {
+        let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream })
+        let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
+        lastText += result
+      }
+
+      updateChat(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          dateTime: new Date().toLocaleString(),
+          text: lastText,
+          inversion: false,
+          error: false,
+          loading: false,
+          conversationOptions: null,
+          requestOptions: { prompt: message, options: { ...options } },
+        },
+      )
+      scrollToBottomIfAtBottom()
+      loading.value = false;
+      updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+    }
+    await fetchChatAPIOnce()
+  } catch (error: any) {
+    const errorMessage = error?.message ?? t('common.wrong')
+
+    if (error.message === 'canceled') {
+      updateChatSome(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          loading: false,
+        },
+      )
+      scrollToBottomIfAtBottom()
+      return
+    }
+
+    const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+
+    if (currentChat?.text && currentChat.text !== '') {
+      updateChatSome(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          text: `${currentChat.text}\n[${errorMessage}]`,
+          error: false,
+          loading: false,
+        },
+      )
+      return
+    }
+
+    updateChat(
+      +uuid,
+      dataSources.value.length - 1,
+      {
+        dateTime: new Date().toLocaleString(),
+        text: errorMessage,
+        inversion: false,
+        error: true,
+        loading: false,
+        conversationOptions: null,
+        requestOptions: { prompt: message, options: { ...options } },
+      },
+    )
+    scrollToBottomIfAtBottom()
+  } finally {
+
+    const lastUserMsg = dataSources.value[dataSources.value.length - 1]
+    const lastAIMsg = dataSources.value[dataSources.value.length - 2]
+    //保存消息记录到后端...zhy加油~
+
+    loading.value = false
+  }
+}
+
+
 async function onConversation() {
   const message = prompt.value
   if (usingContext.value) {
@@ -477,314 +688,119 @@ async function onConversation2() {
     loading.value = false
   }
 }
-// 延续接口，silicon flow的接口用onConversation3函数实现// 修改后的onConversation函数（其他两个同理）
-async function onConversation3() {
-  // 获取最新的用户输入（dataSources长度-1是刚添加的用户消息）
-  const lastUserMsg = dataSources.value[dataSources.value.length - 1]
-  let message = lastUserMsg?.requestOptions?.prompt || ''
 
-  // 更新上下文处理逻辑
-  if (usingContext.value) {
-    // 仅处理用户消息（过滤AI回复）
-    const userMessages = dataSources.value.filter(item => item.inversion)
-    history.value = userMessages.map((msg, index) => [
-      `Human:${msg.text}`,
-      dataSources.value[index * 2 + 1]?.text.split('\n\n数据来源：\n\n')[0] || ''
-    ])
-  } else {
-    history.value = []
-  }
+// /* async function onRegenerate(index: number) {
+//   if (loading.value)
+//     return
 
-  controller = new AbortController()
+//   controller = new AbortController()
 
-  scrollToBottom()
+//   const { requestOptions } = dataSources.value[index]
 
-  loading.value = true
-  prompt.value = ''
+//   let message = requestOptions?.prompt ?? ''
 
-  let options: Chat.ConversationRequest = {}
-  const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+//   let options: Chat.ConversationRequest = {}
 
-  if (lastContext && usingContext.value)
-    options = { ...lastContext }
+//   if (requestOptions.options)
+//     options = { ...requestOptions.options }
 
-  addChat(
-    +uuid,
-    {
-      dateTime: new Date().toLocaleString(),
-      text: '',
-      loading: true,
-      inversion: false,
-      error: false,
-      conversationOptions: null,
-      requestOptions: { 
-        prompt: message, 
-        options: { ...options },
-        character: currentCharacter.value // 添加性格类型
-      },
-    },
-  )
-  scrollToBottom()
+//   loading.value = true
 
-  try {
-    let lastText = ''
-    const fetchChatAPIOnce = async () => {
-      let stream = true
+//   updateChat(
+//     +uuid,
+//     index,
+//     {
+//       dateTime: new Date().toLocaleString(),
+//       text: '',
+//       inversion: false,
+//       error: false,
+//       loading: true,
+//       conversationOptions: null,
+//       requestOptions: { prompt: message, options: { ...options } },
+//     },
+//   )
 
-      if (stream) {
-        interface DocumentContent {
-          data: {
-            content: string[];
-            url: string;
-          };
-        }
+//   try {
+//     let lastText = ''
+//     const fetchChatAPIOnce = async () => {
+//       await fetchChatAPIProcess<Chat.ConversationResponse>({
+//         prompt: message,
+//         options,
+//         signal: controller.signal,
+//         onDownloadProgress: ({ event }) => {
+//           const xhr = event.target
+//           const { responseText } = xhr
+//           // Always process the final line
+//           const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+//           let chunk = responseText
+//           if (lastIndex !== -1)
+//             chunk = responseText.substring(lastIndex)
+//           try {
+//             const data = JSON.parse(chunk)
+//             updateChat(
+//               +uuid,
+//               index,
+//               {
+//                 dateTime: new Date().toLocaleString(),
+//                 text: lastText + (data.text ?? ''),
+//                 inversion: false,
+//                 error: false,
+//                 loading: true,
+//                 conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+//                 requestOptions: { prompt: message, options: { ...options } },
+//               },
+//             )
 
-        let documentContent: DocumentContent;
-        if (active.value) {
-          // 1. get the document content
-          documentContent = await chatfileContent({
-            message: message,
-            hyperparameters: {
-              document_number: 2,
-            }
-          })
+//             if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+//               options.parentMessageId = data.id
+//               lastText = data.text
+//               message = ''
+//               return fetchChatAPIOnce()
+//             }
+//           }
+//           catch (error) {
+//             //
+//           }
+//         },
+//       })
+//       updateChatSome(+uuid, index, { loading: false })
+//     }
+//     await fetchChatAPIOnce()
+//   }
+//   catch (error: any) {
+//     if (error.message === 'canceled') {
+//       updateChatSome(
+//         +uuid,
+//         index,
+//         {
+//           loading: false,
+//         },
+//       )
+//       return
+//     }
 
-          console.log("****", documentContent)
-          // 2. add the prompt to the message
-          let mergedContent = ''
-          for (let i = 0; i < documentContent.data.content.length; i++) {
-            mergedContent += `第${i + 1}份参考资料：` + documentContent.data.content[i]
-          }
+//     const errorMessage = error?.message ?? t('common.wrong')
 
-          console.log("referenced content: ", mergedContent)
+//     updateChat(
+//       +uuid,
+//       index,
+//       {
+//         dateTime: new Date().toLocaleString(),
+//         text: errorMessage,
+//         inversion: false,
+//         error: true,
+//         loading: false,
+//         conversationOptions: null,
+//         requestOptions: { prompt: message, options: { ...options } },
+//       },
+//     )
+//   }
+//   finally {
+//     loading.value = false
+//   }
+// } 
+//  */
 
-          message = `请根据以下参考资料回答问题：\n\n${mergedContent}\n\n用户的输入：${message}`
-        }
-
-        const gen = fetchStreamData({
-          message: message,
-          history: history.value,
-          stream: stream,
-          character: currentCharacter.value // 添加性格类型
-        });
-
-        function step(value?: any) {
-          const result = gen.next(value);
-
-          if (!result.done) {
-            // 检查 result.value 是否为 Promise，若是则等待其完成，否则直接打印
-            if (result.value instanceof Promise) {
-              result.value.then(data => step(data)).catch(err => gen.throw(err));
-            } else {
-              dataSources.value[dataSources.value.length - 1].text += result.value;
-
-              step(); // 继续执行生成器
-              scrollToBottomIfAtBottom()
-            }
-          } else {
-            loading.value = false;
-            lastText += dataSources.value[dataSources.value.length - 1].text
-
-            updateChat(
-              +uuid,
-              dataSources.value.length - 1,
-              {
-                dateTime: new Date().toLocaleString(),
-                text: lastText,
-                inversion: false,
-                error: false,
-                loading: false,
-                conversationOptions: null,
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
-          }
-        }
-        loading.value = true;
-        step();
-      } else {
-        let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream })
-        let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
-        lastText += result
-      }
-
-      updateChat(
-        +uuid,
-        dataSources.value.length - 1,
-        {
-          dateTime: new Date().toLocaleString(),
-          text: lastText,
-          inversion: false,
-          error: false,
-          loading: false,
-          conversationOptions: null,
-          requestOptions: { prompt: message, options: { ...options } },
-        },
-      )
-      scrollToBottomIfAtBottom()
-      loading.value = false;
-      updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-    }
-    await fetchChatAPIOnce()
-  } catch (error: any) {
-    const errorMessage = error?.message ?? t('common.wrong')
-
-    if (error.message === 'canceled') {
-      updateChatSome(
-        +uuid,
-        dataSources.value.length - 1,
-        {
-          loading: false,
-        },
-      )
-      scrollToBottomIfAtBottom()
-      return
-    }
-
-    const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
-
-    if (currentChat?.text && currentChat.text !== '') {
-      updateChatSome(
-        +uuid,
-        dataSources.value.length - 1,
-        {
-          text: `${currentChat.text}\n[${errorMessage}]`,
-          error: false,
-          loading: false,
-        },
-      )
-      return
-    }
-
-    updateChat(
-      +uuid,
-      dataSources.value.length - 1,
-      {
-        dateTime: new Date().toLocaleString(),
-        text: errorMessage,
-        inversion: false,
-        error: true,
-        loading: false,
-        conversationOptions: null,
-        requestOptions: { prompt: message, options: { ...options } },
-      },
-    )
-    scrollToBottomIfAtBottom()
-  } finally {
-    loading.value = false
-  }
-}
-
-/* async function onRegenerate(index: number) {
-  if (loading.value)
-    return
-
-  controller = new AbortController()
-
-  const { requestOptions } = dataSources.value[index]
-
-  let message = requestOptions?.prompt ?? ''
-
-  let options: Chat.ConversationRequest = {}
-
-  if (requestOptions.options)
-    options = { ...requestOptions.options }
-
-  loading.value = true
-
-  updateChat(
-    +uuid,
-    index,
-    {
-      dateTime: new Date().toLocaleString(),
-      text: '',
-      inversion: false,
-      error: false,
-      loading: true,
-      conversationOptions: null,
-      requestOptions: { prompt: message, options: { ...options } },
-    },
-  )
-
-  try {
-    let lastText = ''
-    const fetchChatAPIOnce = async () => {
-      await fetchChatAPIProcess<Chat.ConversationResponse>({
-        prompt: message,
-        options,
-        signal: controller.signal,
-        onDownloadProgress: ({ event }) => {
-          const xhr = event.target
-          const { responseText } = xhr
-          // Always process the final line
-          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-          let chunk = responseText
-          if (lastIndex !== -1)
-            chunk = responseText.substring(lastIndex)
-          try {
-            const data = JSON.parse(chunk)
-            updateChat(
-              +uuid,
-              index,
-              {
-                dateTime: new Date().toLocaleString(),
-                text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
-
-            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
-              lastText = data.text
-              message = ''
-              return fetchChatAPIOnce()
-            }
-          }
-          catch (error) {
-            //
-          }
-        },
-      })
-      updateChatSome(+uuid, index, { loading: false })
-    }
-    await fetchChatAPIOnce()
-  }
-  catch (error: any) {
-    if (error.message === 'canceled') {
-      updateChatSome(
-        +uuid,
-        index,
-        {
-          loading: false,
-        },
-      )
-      return
-    }
-
-    const errorMessage = error?.message ?? t('common.wrong')
-
-    updateChat(
-      +uuid,
-      index,
-      {
-        dateTime: new Date().toLocaleString(),
-        text: errorMessage,
-        inversion: false,
-        error: true,
-        loading: false,
-        conversationOptions: null,
-        requestOptions: { prompt: message, options: { ...options } },
-      },
-    )
-  }
-  finally {
-    loading.value = false
-  }
-} */
 
 function handleExport() {
   if (loading.value)
@@ -947,48 +963,10 @@ const fileList = ref<FileItem[]>([])
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-
-// const parseFile = async (fileItem: FileItem) => {
-//   return new Promise((resolve, reject) => {
-//     setTimeout(async () => {
-//       try {
-//         const allowedTypes = [
-//           'text/plain',      // txt
-//           'text/markdown',   // markdown
-//           'application/msword', // doc
-//           'application/pdf', // pdf
-//           'image/jpeg',     // jpg
-//           'image/png',      // png
-//         ]
-
-//         // 从文件名获取扩展名作为备用方案
-//         const fileName = fileItem.file.name.toLowerCase()
-//         const fileExtensions = ['.txt', '.md', '.doc', '.docx', '.pdf', '.jpg', '.jpeg', '.png']
-
-//         // 检查文件类型或扩展名
-//         const isValidType = allowedTypes.includes(fileItem.file.type) ||
-//           fileExtensions.some(ext => fileName.endsWith(ext))
-
-//         if (isValidType) {
-
-//           // 这里替换为实际的解析逻辑，示例使用虚拟内容
-//           const content = `[文件内容示例：这是 ${fileItem.file.name} 的解析内容]`
-//           return resolve(content)
-
-//         } else {
-//           throw new Error(`[${fileItem.file.name}] 解析失败! 请检查文件类型或服务器连接`)
-//         }
-//       } catch (error) {
-//         reject(error)
-//       }
-//     }, 1000)
-//   })
-// }
-
 // parseFile函数
 const parseFile = async (fileItem: FileItem) => {
-  if (fileItem.file.size > 100 * 1024 * 1024) {
-    throw new Error('文件大小不能超过100MB');
+  if (fileItem.file.size > 10 * 1024 * 1024) {
+    throw new Error('单个文件大小不能超过10MB');
   }
   const formData = new FormData();
   formData.append('file', fileItem.file);
@@ -1025,7 +1003,7 @@ const parseFile = async (fileItem: FileItem) => {
     }
   } catch (error) {
     const errorMsg = (error as Error).message;
-    throw new Error(`[${fileItem.file.name}] 解析失败: ${errorMsg}`);
+    throw new Error(`[${fileItem.file.name}] 上传失败: ${errorMsg}`);
   }
 };
 
@@ -1033,6 +1011,20 @@ const parseFile = async (fileItem: FileItem) => {
 const handleFileSelect = async (e: Event) => {
   const input = e.target as HTMLInputElement
   if (input.files?.length) {
+    // 1. 验证文件数量
+    if (fileList.value.length + input.files.length > 10) {
+      ms.error('最多上传10个文件')
+      return
+    }
+
+    // 2. 验证文件大小
+    const oversizedFiles = Array.from(input.files).filter(file => file.size > 10 * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      ms.error(`文件大小超过限制：${oversizedFiles.map(f => f.name).join(', ')}`)
+      return
+    }
+
+    // 3. 过滤重复文件
     const existingFiles = new Set(fileList.value.map(f => f.file.name));
     const newFiles = Array.from(input.files)
       .filter(file => !existingFiles.has(file.name)).map(file => ({
@@ -1090,7 +1082,7 @@ const handleCharacterChange = (value: CharacterType) => {
   console.log('Character changed to:', value) // 添加日志
   setCurrentCharacter(value)
   if (uuid) {
-    chatStore.updateHistory(uuid, { character: value })
+    chatStore.updateHistory(Number(uuid), { character: value })
     console.log('History updated with character:', value) // 添加日志
   }
 }
@@ -1107,12 +1099,8 @@ const handleCharacterChange = (value: CharacterType) => {
           :class="[isMobile ? 'p-2' : 'p-4']">
           <div class="flex items-center justify-between p-4 border-b dark:border-neutral-800">
             <div class="flex items-center space-x-4">
-              <NSelect
-                v-model:value="currentCharacter"
-                :options="characterOptions"
-                :placeholder="$t('chat.selectCharacter')"
-                @update:value="handleCharacterChange"
-              />
+              <NSelect v-model:value="currentCharacter" :options="characterOptions"
+                :placeholder="$t('chat.selectCharacter')" @update:value="handleCharacterChange" />
             </div>
           </div>
           <template v-if="!dataSources.length">
@@ -1123,9 +1111,11 @@ const handleCharacterChange = (value: CharacterType) => {
           </template>
           <template v-else>
             <div>
+              <!-- :templates="templates" -->
+
               <Message v-for="(item, index) of dataSources" :key="index" :attachments="item.attachments"
-                :templates="templates" :date-time="item.dateTime" :text="item.text" :inversion="item.inversion"
-                :error="item.error" :loading="item.loading" @delete="handleDelete(index)" />
+                :date-time="item.dateTime" :text="item.text" :inversion="item.inversion" :error="item.error"
+                :loading="item.loading" @delete="handleDelete(index)" />
               <div class="sticky bottom-0 left-0 flex justify-center">
                 <NButton v-if="loading" type="warning" @click="handleStop">
                   <template #icon>
@@ -1181,12 +1171,25 @@ const handleCharacterChange = (value: CharacterType) => {
 
           <div class="flex flex-1 items-center space-x-2">
             <!-- 文件上传按钮 -->
-            <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect">
-            <HoverButton @click="triggerFileInput" class="flex-shrink-0">
-              <span class="text-xl text-[#4f555e] dark:text-white">
-                <SvgIcon icon="ri:attachment-line" />
-              </span>
-            </HoverButton>
+            <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect"
+              accept=".pdf,.docx,.csv,.pptx,.txt,.md,.xlsx,.json,.png,.jpg,.jpeg">
+            <NTooltip trigger="hover" placement="top">
+              <template #trigger>
+                <HoverButton @click="triggerFileInput" class="flex-shrink-0">
+                  <span class="text-xl text-[#4f555e] dark:text-white">
+                    <SvgIcon icon="ri:attachment-line" />
+                  </span>
+                </HoverButton>
+              </template>
+              <div class="max-w-[200px] text-center text-xs space-y-1">
+                <div class="font-medium">支持上传文件</div>
+                <div>(最多10个，每个10MB)</div>
+                <div class="pt-1 border-t border-gray-200 dark:border-neutral-600">
+                  支持格式：PDF, DOCX, CSV, PPTX, TXT, MD, XLSX, JSON, PNG, JPG, JPEG
+                </div>
+              </div>
+            </NTooltip>
+
 
             <NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption"
               class="flex-1 min-w-0">
@@ -1227,5 +1230,4 @@ const handleCharacterChange = (value: CharacterType) => {
 .min-w-0 {
   min-width: 0;
 }
-
 </style>

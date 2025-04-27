@@ -10,11 +10,46 @@ import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { ocrService } from './ocr.service'; // 本地的OCR服务
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { v4 as uuid } from 'uuid';
+import { createHash } from 'crypto';
+import os from 'os';
+const officeParser = require('officeparser');
+
 
 @Injectable()
 export class FileService {
-  private readonly allowedExtensions = new Set(['txt', 'md', 'docx', 'pdf', 'png', 'jpg', 'jpeg']);
+  private readonly allowedExtensions = new Set([
+    'txt', 'md', 'docx', 'pdf', 'png', 'jpg', 'jpeg',
+    'csv', 'pptx', 'xlsx', 'json'
+  ]);  // txt md doc docx
+
+  private readonly officeParserConfig = {
+    ignoreNotes: true,          // 忽略PPT备注
+    newlineDelimiter: '\n',     // 使用系统换行符
+    outputErrorToConsole: false // 禁止输出内部错误
+  };
+
+  private classifyFileType(ext: string): 'office' | 'text' | 'image'  {
+    switch (ext) {
+      case 'docx':
+      case 'pptx':
+      case 'xlsx':
+        return 'office';
+      case 'txt':
+      case 'md':
+      case 'json':
+      case 'csv':
+        return 'text';
+      case 'pdf':
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+        return 'image';
+      default:
+        return 'text';
+    }
+  }
 
   private detectFileType(buffer: Buffer, originalName: string): string {
     const fileExt = path.extname(originalName).toLowerCase().slice(1);
@@ -57,55 +92,73 @@ export class FileService {
     }
   }
 
+  // 修改parseFile方法
   async parseFile(filePath: string, fileType: string) {
-    if (!fs.existsSync(filePath)) {
-      throw new HttpException(
-        { statusCode: HttpStatus.NOT_FOUND, message: `File not found: ${filePath}` },
-        HttpStatus.NOT_FOUND
-      );
-    }
-
-    const supportedText = new Set(['txt', 'md', 'markdown', 'docx']);
-    const supportedOCR = new Set(['pdf', 'png', 'jpg', 'jpeg']);
+    const ext = path.extname(filePath).slice(1);
+    const classifier = this.classifyFileType(ext);
 
     try {
-      if (supportedText.has(fileType)) {
-        return await this.parseTextualFile(filePath, fileType);
-      } else if (supportedOCR.has(fileType)) {
-        return await this.parseWithOCR(filePath);
+      switch (classifier) {
+        case 'office': 
+          return await this.parseOfficeFile(filePath);
+        case 'text':
+          return await this.parseTextualFile(filePath, ext);
+        case 'image':
+          return await this.parseWithOCR(filePath);
+        default:
+          throw new Error('Unsupported file type');
       }
-      throw new HttpException(
-        { statusCode: HttpStatus.UNSUPPORTED_MEDIA_TYPE, message: `Unsupported file type: ${fileType}` },
-        HttpStatus.UNSUPPORTED_MEDIA_TYPE
-      );
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new HttpException(
-        { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: `File parsing failed: ${error.message}` },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      throw new HttpException({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: `解析失败: ${error.message}`
+      }, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  private async parseOfficeFile(filePath: string): Promise<string> {
+    try {
+      // 添加类型断言确保Buffer类型
+      const fileBuffer = fs.readFileSync(filePath) as Buffer;
+
+      // 调用officeParser核心方法
+      const content = await officeParser.parseOfficeAsync(
+        fileBuffer,
+        this.officeParserConfig
+      );
+
+      // 后处理逻辑
+      return this.postProcessContent(content, path.extname(filePath));
+    } catch (error) {
+      throw new Error(`Office文件解析失败: ${error.message}`);
+    }
+  }
+
+  private postProcessContent(content: string, ext: string): string {
+    const processors = {
+      '.pptx': (text: string) =>
+        text.split('\n')
+          .map(line => line.replace(/^Notes:\s*/i, ''))  // 移除备注标签
+          .filter(line => line.trim().length > 0)
+          .join('\n'),
+      '.xlsx': (text: string) =>
+        text.replace(/\t/g, ' | ')  // 表格格式化
+          .replace(/\n{3,}/g, '\n\n'),
+      '.docx': (text: string) =>
+        text.split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('\n'),
+      '.pdf': (text: string) =>
+        text.replace(/\s+/g, ' ')  // 压缩多余空格
+          .trim()
+    };
+    const processor = processors[ext.toLowerCase()] || ((t: string) => t);
+    return processor(content);
   }
 
   private async parseTextualFile(filePath: string, ext: string) {
     try {
-      if (ext === 'docx') {
-        // 使用专业docx解析库+自定义处理
-        const mammoth = require('mammoth');
-        const result = await mammoth.extractRawText({
-          path: filePath,
-          // 配置转换参数
-          includeHiddenText: false,  // 排除隐藏文本
-          includeFootnotes: false,   // 排除脚注
-          preserveLineBreaks: false  // 不保留软换行
-        });
-        // 自定义段落处理
-        return result.value
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0) // 移除空行
-          .join('\n');
-      }
       const loader = new TextLoader(filePath);
       const docs = await loader.load();
       return docs.map(doc => doc.pageContent).join('\n')
@@ -115,72 +168,37 @@ export class FileService {
     }
   }
 
-  // private async parseWithOCR(filePath: string) {
-  //   try {
-  //     const fileType = path.extname(filePath).toLowerCase().slice(1);
-  //     const isPDF = fileType === 'pdf';
-  
-  //     if (isPDF) {
-  //       try {
-  //         const pdfText = await this.extractPDFText(filePath);
-  //         if (pdfText.trim().length > 0) return pdfText;
-  //       } catch (error) {
-  //         console.log(`PDF 直接解析失败，启动 OCR 回退: ${error.message}`);
-  //       }
-  //     }
-  
-  //     if (isPDF) {
-  //       const imagePaths = await this.convertPDFToImages(filePath);
-  //       const results: string[] = [];
-        
-  //       for (const imgPath of imagePaths) {
-  //         try {
-  //           const text = await ocrService.extractText(imgPath); // 单页处理
-  //           results.push(text);
-  //         } catch (error) {
-  //           console.error(`页面 ${path.basename(imgPath)} 识别失败:`, error);
-  //           throw error; // 任一页面失败则整体失败
-  //         }
-  //       }
-        
-  //       return results.join('\n');
-  //     }
-  
-  //     return await ocrService.extractText(filePath);
-  //   } catch (error) {
-  //     throw new Error(`OCR 处理失败: ${error.message}`);
-  //   }
-  // }
+
+
+
   private async parseWithOCR(filePath: string) {
+
     let workerInitialized = false;
-    
+
     try {
       const fileType = path.extname(filePath).toLowerCase().slice(1);
       const isPDF = fileType === 'pdf';
-  
+      if (isPDF) {
+        // 尝试直接提取PDF文本
+          const pdfText = await this.parseOfficeFile(filePath)
+          if (pdfText.trim().length > 0) return pdfText;
+      }
+
       // 提前初始化OCR Worker
       await ocrService.start();
       workerInitialized = true;
-  
+
       if (isPDF) {
-        // 尝试直接提取PDF文本
-        try {
-          const pdfText = await this.extractPDFText(filePath);
-          if (pdfText.trim().length > 0) return pdfText;
-        } catch (error) {
-          console.log(`PDF 直接解析失败，启动 OCR 回退: ${error.message}`);
-        }
-  
         // OCR处理流程
         const imagePaths = await this.convertPDFToImages(filePath);
         const results: string[] = [];
-        
+
         try {
           for (const imgPath of imagePaths) {
             const text = await ocrService.extractText(imgPath);
             results.push(text);
           }
-          return results.join('\n');
+          return '(OCR识别内容)\n' + results.join('\n');
         } finally {
           // 清理生成的图片文件
           imagePaths.forEach(imgPath => fs.rmSync(imgPath));
@@ -188,9 +206,10 @@ export class FileService {
           fs.rmSync(outputDir, { recursive: true, force: true });
         }
       }
-  
+
       // 单图像处理
-      return await ocrService.extractText(filePath);
+      const singleImageText = await ocrService.extractText(filePath);
+      return '(OCR识别内容)\n' + singleImageText;
     } catch (error) {
       throw new Error(`OCR 处理失败: ${error.message}`);
     } finally {
@@ -201,88 +220,177 @@ export class FileService {
     }
   }
 
-  private async extractPDFText(filePath: string): Promise<string> {
-    try {
-      const loader = new PDFLoader(filePath);
-      const docs = await loader.load();
-
-      // 后处理文本
-      return docs.map(doc => {
-        return doc.pageContent
-          .replace(/\s+/g, ' ')  // 将所有连续空白字符替换为单个空格
-          .trim();
-      }).join(' ');
-    }
-    catch (error) {
-      throw new Error(`PDF text extraction failed: ${error.message}`);
-    }
-  }
-
   private async convertPDFToImages(pdfPath: string): Promise<string[]> {
     let poppler;
     try {
-        poppler = require('pdf-poppler');
+      poppler = require('pdf-poppler');
     } catch (error) {
-        throw new Error('pdf-poppler not found');
+      throw new Error('pdf-poppler not found');
     }
 
     const outputDir = path.join(path.dirname(pdfPath), 'pdf_images');
     let createdFiles: string[] = [];
 
     try {
-        fs.mkdirSync(outputDir, { recursive: true });
+      fs.mkdirSync(outputDir, { recursive: true });
 
-        const opts = {
-            format: 'jpeg',
-            out_dir: outputDir,
-            out_prefix: path.basename(pdfPath, '.pdf'),
-            page: null
-        };
+      const opts = {
+        format: 'jpeg',
+        out_dir: outputDir,
+        out_prefix: path.basename(pdfPath, '.pdf'),
+        page: null
+      };
 
-        await poppler.convert(pdfPath, opts);
+      await poppler.convert(pdfPath, opts);
 
-        createdFiles = fs.readdirSync(outputDir)
-            .filter(file => file.startsWith(opts.out_prefix))
-            .map(file => path.join(outputDir, file))
-            .sort();
+      createdFiles = fs.readdirSync(outputDir)
+        .filter(file => file.startsWith(opts.out_prefix))
+        .map(file => path.join(outputDir, file))
+        .sort();
 
-        if (createdFiles.length === 0) {
-            throw new Error('PDF转换未生成任何图片文件');
-        }
+      if (createdFiles.length === 0) {
+        throw new Error('PDF转换未生成任何图片文件');
+      }
 
-        return createdFiles;
+      return createdFiles;
     } catch (error) {
-          fs.existsSync(outputDir) && fs.rmSync(outputDir, { recursive: true, force: true });
-        throw new Error(`PDF转图片失败: ${error.message}`);
+      fs.existsSync(outputDir) && fs.rmSync(outputDir, { recursive: true, force: true });
+      throw new Error(`PDF转图片失败: ${error.message}`);
     }
-}
+  }
 
-  // private async convertPDFToImages(pdfPath: string): Promise<string[]> {
-  //   const poppler = require('pdf-poppler');
-  //   const outputDir = path.join(path.dirname(pdfPath), 'pdf_images');
+
+  // private async parsescv(filePath: string): Promise<string> {
+  //   const ext = path.extname(filePath).toLowerCase();
 
   //   try {
-  //     fs.mkdirSync(outputDir, { recursive: true });
-
-  //     const opts = {
-  //       format: 'jpeg',
-  //       out_dir: outputDir,
-  //       out_prefix: path.basename(pdfPath, '.pdf'),
-  //       page: null
-  //     };
-
-  //     await poppler.convert(pdfPath, opts);
-
-  //     return fs.readdirSync(outputDir)
-  //       .filter(file => file.startsWith(opts.out_prefix))
-  //       .map(file => path.join(outputDir, file))
-  //       .sort();
+  //     if (ext === '.csv') {
+  //       return this.parseCSV(filePath);
+  //     }
+  //     if (ext === '.xlsx') {
+  //       return this.parseExcel(filePath);
+  //     }
+  //     throw new Error('Unsupported spreadsheet format');
   //   } catch (error) {
-  //     // 转换失败时清理生成目录
-  //     fs.existsSync(outputDir) && fs.rmSync(outputDir, { recursive: true, force: true });
-  //     throw new Error(`PDF to image conversion failed: ${error.message}`);
+  //     throw new Error(`表格文件解析失败: ${error.message}`);
   //   }
   // }
+
+  // private async parseCSV(filePath: string): Promise<string> {
+  //   const content = fs.readFileSync(filePath, 'utf-8');
+  //   const parse = require('csv-parse/sync').parse;
+
+  //   const records = parse(content, {
+  //     columns: true,
+  //     skip_empty_lines: true,
+  //     trim: true
+  //   });
+
+  //   return records
+  //     .map(row => Object.entries(row)
+  //       .map(([key, value]) => `${key}: ${value}`)
+  //       .join(' | ')
+  //     )
+  //     .join('\n');
+  // }
+
+
+  // private async parseExcel(filePath: string): Promise<string> {
+  //   const xlsx = require('xlsx');
+  //   const workbook = xlsx.readFile(filePath);
+
+  //   return workbook.SheetNames.map(sheetName => {
+  //     const sheet = workbook.Sheets[sheetName];
+  //     const range = xlsx.utils.decode_range(sheet['!ref']);
+
+  //     const rows = [];
+  //     for (let rowNum = range.s.r; rowNum <= range.e.r; rowNum++) {
+  //       const row = [];
+  //       for (let colNum = range.s.c; colNum <= range.e.c; colNum++) {
+  //         const cellAddress = xlsx.utils.encode_cell({ r: rowNum, c: colNum });
+  //         const cell = sheet[cellAddress];
+  //         row.push(cell ? cell.v : '');
+  //       }
+  //       rows.push(row.join('\t'));
+  //     }
+
+  //     return `工作表: ${sheetName}\n${rows.join('\n')}`;
+  //   }).join('\n\n');
+  // }
+
+
+  // private async parseppt(filePath: string): Promise<string> {
+  //   const ext = path.extname(filePath).toLowerCase();
+
+  //   try {
+  //     if (ext === '.pptx') {
+  //       return this.parsePPTX(filePath);
+  //     }
+  //     throw new Error('Unsupported ppt format');
+  //   } catch (error) {
+  //     throw new Error(`ppt解析失败: ${error.message}`);
+  //   }
+  // }
+
+  // private async parsePPTX(filePath: string): Promise<string> {
+  //   try {
+  //     const PPTX = require('nodejs-pptx');
+  //     const composer = new PPTX.Composer();
+
+  //     // 1. 必须显式加载文件
+  //     await composer.load(filePath);
+
+  //     let slidesContent: string[] = [];
+
+  //     // 2. 使用 compose() 的正确方式
+  //     await composer.compose(async pres => {
+  //       // 3. 通过 getSlideCount() 获取总页数
+  //       const slideCount = pres.getSlideCount();
+
+  //       // 4. 从1开始遍历 (base-1)
+  //       for (let i = 1; i <= slideCount; i++) {
+  //         const slide = pres.getSlide(i);
+  //         let slideTexts: string[] = [];
+
+  //         // 5. 通过专用API获取文本框
+  //         const texts = slide.getTexts();
+  //         for (const text of texts) {
+  //           slideTexts.push(text.value().trim());
+  //         }
+
+  //         // 6. 获取形状中的文字
+  //         const shapes = slide.getShapes();
+  //         for (const shape of shapes) {
+  //           if (shape.hasText()) {
+  //             slideTexts.push(shape.getText().value().trim());
+  //           }
+  //         }
+
+  //         slidesContent.push(`=== 幻灯片 ${i} ===\n${slideTexts.join('\n')}\n`);
+  //       }
+  //     });
+  //     return "(ppt解析内容)\n" + slidesContent.join('\n');
+  //   } catch (error) {
+  //     throw new Error(`PPTX解析失败: ${error.message}`);
+  //   }
+  // }
+
+  // private async parseLegacyPPT(filePath: string): Promise<string> {
+  //   // 注意：PPT二进制文件需要特殊处理，这里演示调用外部工具
+  //   try {
+  //     const { execSync } = require('child_process');
+  //     const outputPath = path.join(path.dirname(filePath), 'temp.pptx');
+
+  //     // 使用LibreOffice转换（需要系统安装）
+  //     execSync(`soffice --convert-to pptx --outdir ${path.dirname(filePath)} ${filePath}`);
+  //     const result = await this.parsePPTX(outputPath);
+  //     fs.unlinkSync(outputPath);
+  //     return result;
+  //   } catch (error) {
+  //     throw new Error('PPT文件解析需要安装LibreOffice');
+  //   }
+  // }
+
 
   //上传文件向量化
   async refactorVectorStore() {

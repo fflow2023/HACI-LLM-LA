@@ -1,3 +1,4 @@
+//HACI-LLM-LA\service\src\module\app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';

@@ -19,6 +19,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false } // 明确标记无需认证
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/auth/register.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: AdminPanelView,

@@ -102,7 +102,7 @@
   OPENAI_API_KEY=xxxx
   COHERE_API_KEY=WrJWnnCOXit1EiZ3eGvIoeqK3tPvnWyOp55oeSxW
 
-  #前端地址
+  # 配置允许的域名/地址（用英文逗号分隔）
   ALLOWED_ORIGINS=http://localhost:1002,http://172.22.80.1:1002
 
   # Database

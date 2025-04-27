@@ -5,7 +5,6 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  ParseFilePipeBuilder,
   Post,
   UploadedFile,
   UseInterceptors,

@@ -2,6 +2,8 @@
 ### 前提警告
 > 本项目使用的node版本为18，如果之前未使用nvm管理node版本，并且下载的node版本非18，可以使用nvm切换
 
+F:\Code\HACIProjects\LearnHelper\HACI-LLM-LA\service\traineddata\chi_sim.traineddata.gz
+F:\Code\HACIProjects\LearnHelper\HACI-LLM-LA\service\src\service\traineddata
 - 查看当前的node版本
   ```shell
   node -v

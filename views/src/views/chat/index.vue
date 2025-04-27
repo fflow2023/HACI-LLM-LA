@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect } from 'naive-ui'
+import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect, NTooltip } from 'naive-ui'
 import html2canvas from 'html2canvas'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
@@ -350,344 +350,345 @@ async function onConversation3() {
     scrollToBottomIfAtBottom()
   } finally {
 
-    //保存消息记录到后端
     const lastUserMsg = dataSources.value[dataSources.value.length - 1]
     const lastAIMsg = dataSources.value[dataSources.value.length - 2]
+    //保存消息记录到后端...zhy加油~
 
     loading.value = false
   }
 }
 
 
-// // async function onConversation() {
-// //   const message = prompt.value
-// //   if (usingContext.value) {
-// //     for (let i = 0; i < dataSources.value.length; i = i + 2)
-// //       history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-// //   }
-// //   else { history.value.length = 0 }
-// //   if (!message || message.trim() === '')
-// //     return
+async function onConversation() {
+  const message = prompt.value
+  if (usingContext.value) {
+    for (let i = 0; i < dataSources.value.length; i = i + 2)
+      history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
+  }
+  else { history.value.length = 0 }
+  if (!message || message.trim() === '')
+    return
 
-// //   controller = new AbortController()
+  controller = new AbortController()
 
-// //   addChat(
-// //     +uuid,
-// //     {
-// //       dateTime: new Date().toLocaleString(),
-// //       text: message,
-// //       inversion: true,
-// //       error: false,
-// //       conversationOptions: null,
-// //       requestOptions: { prompt: message, options: null },
+  addChat(
+    +uuid,
+    {
+      dateTime: new Date().toLocaleString(),
+      text: message,
+      inversion: true,
+      error: false,
+      conversationOptions: null,
+      requestOptions: { prompt: message, options: null },
 
-// //     },
-// //   )
-// //   scrollToBottom()
+    },
+  )
+  scrollToBottom()
 
-// //   loading.value = true
-// //   prompt.value = ''
+  loading.value = true
+  prompt.value = ''
 
-// //   let options: Chat.ConversationRequest = {}
-// //   const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+  let options: Chat.ConversationRequest = {}
+  const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
 
-// //   if (lastContext && usingContext.value)
-// //     options = { ...lastContext }
+  if (lastContext && usingContext.value)
+    options = { ...lastContext }
 
-// //   addChat(
-// //     +uuid,
-// //     {
-// //       dateTime: new Date().toLocaleString(),
-// //       text: '',
-// //       loading: true,
-// //       inversion: false,
-// //       error: false,
-// //       conversationOptions: null,
-// //       requestOptions: { prompt: message, options: { ...options } },
-// //     },
-// //   )
-// //   scrollToBottom()
+  addChat(
+    +uuid,
+    {
+      dateTime: new Date().toLocaleString(),
+      text: '',
+      loading: true,
+      inversion: false,
+      error: false,
+      conversationOptions: null,
+      requestOptions: { prompt: message, options: { ...options } },
+    },
+  )
+  scrollToBottom()
 
-// //   try {
-// //     const lastText = ''
-// //     const fetchChatAPIOnce = async () => {
-// //       const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
-// //       const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-// //       updateChat(
-// //         +uuid,
-// //         dataSources.value.length - 1,
-// //         {
-// //           dateTime: new Date().toLocaleString(),
-// //           text: lastText + (result ?? ''),
-// //           inversion: false,
-// //           error: false,
-// //           loading: false,
-// //           conversationOptions: null,
-// //           requestOptions: { prompt: message, options: { ...options } },
-// //         },
-// //       )
-// //       scrollToBottomIfAtBottom()
-// //       loading.value = false
-// //       /* await fetchChatAPIProcess<Chat.ConversationResponse>({
-// //         prompt: message,
-// //         options,
-// //         signal: controller.signal,
-// //         onDownloadProgress: ({ event }) => {
-// //           const xhr = event.target
-// //           const { responseText } = xhr
-// //           // Always process the final line
-// //           const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-// //           let chunk = responseText
-// //           if (lastIndex !== -1)
-// //             chunk = responseText.substring(lastIndex)
-// //           try {
-// //             const data = JSON.parse(chunk)
-// //             updateChat(
-// //               +uuid,
-// //               dataSources.value.length - 1,
-// //               {
-// //                 dateTime: new Date().toLocaleString(),
-// //                 text: lastText + (data.text ?? ''),
-// //                 inversion: false,
-// //                 error: false,
-// //                 loading: true,
-// //                 conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-// //                 requestOptions: { prompt: message, options: { ...options } },
-// //               },
-// //             )
+  try {
+    const lastText = ''
+    const fetchChatAPIOnce = async () => {
+      const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
+      const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
+      updateChat(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          dateTime: new Date().toLocaleString(),
+          text: lastText + (result ?? ''),
+          inversion: false,
+          error: false,
+          loading: false,
+          conversationOptions: null,
+          requestOptions: { prompt: message, options: { ...options } },
+        },
+      )
+      scrollToBottomIfAtBottom()
+      loading.value = false
+      /* await fetchChatAPIProcess<Chat.ConversationResponse>({
+        prompt: message,
+        options,
+        signal: controller.signal,
+        onDownloadProgress: ({ event }) => {
+          const xhr = event.target
+          const { responseText } = xhr
+          // Always process the final line
+          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+          let chunk = responseText
+          if (lastIndex !== -1)
+            chunk = responseText.substring(lastIndex)
+          try {
+            const data = JSON.parse(chunk)
+            updateChat(
+              +uuid,
+              dataSources.value.length - 1,
+              {
+                dateTime: new Date().toLocaleString(),
+                text: lastText + (data.text ?? ''),
+                inversion: false,
+                error: false,
+                loading: true,
+                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+                requestOptions: { prompt: message, options: { ...options } },
+              },
+            )
 
-// //             if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-// //               options.parentMessageId = data.id
-// //               lastText = data.text
-// //               message = ''
-// //               return fetchChatAPIOnce()
-// //             }
+            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+              options.parentMessageId = data.id
+              lastText = data.text
+              message = ''
+              return fetchChatAPIOnce()
+            }
 
-// //             scrollToBottomIfAtBottom()
-// //           }
-// //           catch (error) {
-// //             //
-// //           }
-// //         },
-// //       }) */
-// //       updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-// //     }
+            scrollToBottomIfAtBottom()
+          }
+          catch (error) {
+            //
+          }
+        },
+      }) */
+      updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+    }
 
-// //     await fetchChatAPIOnce()
-// //   }
-// //   catch (error: any) {
-// //     const errorMessage = error?.message ?? t('common.wrong')
+    await fetchChatAPIOnce()
+  }
+  catch (error: any) {
+    const errorMessage = error?.message ?? t('common.wrong')
 
-// //     if (error.message === 'canceled') {
-// //       updateChatSome(
-// //         +uuid,
-// //         dataSources.value.length - 1,
-// //         {
-// //           loading: false,
-// //         },
-// //       )
-// //       scrollToBottomIfAtBottom()
-// //       return
-// //     }
+    if (error.message === 'canceled') {
+      updateChatSome(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          loading: false,
+        },
+      )
+      scrollToBottomIfAtBottom()
+      return
+    }
 
-// //     const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+    const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-// //     if (currentChat?.text && currentChat.text !== '') {
-// //       updateChatSome(
-// //         +uuid,
-// //         dataSources.value.length - 1,
-// //         {
-// //           text: `${currentChat.text}\n[${errorMessage}]`,
-// //           error: false,
-// //           loading: false,
-// //         },
-// //       )
-// //       return
-// //     }
+    if (currentChat?.text && currentChat.text !== '') {
+      updateChatSome(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          text: `${currentChat.text}\n[${errorMessage}]`,
+          error: false,
+          loading: false,
+        },
+      )
+      return
+    }
 
-// //     updateChat(
-// //       +uuid,
-// //       dataSources.value.length - 1,
-// //       {
-// //         dateTime: new Date().toLocaleString(),
-// //         text: errorMessage,
-// //         inversion: false,
-// //         error: true,
-// //         loading: false,
-// //         conversationOptions: null,
-// //         requestOptions: { prompt: message, options: { ...options } },
-// //       },
-// //     )
-// //     scrollToBottomIfAtBottom()
-// //   }
-// //   finally {
-// //     loading.value = false
-// //   }
-// // }
-// // async function onConversation2() {
-// //   const message = prompt.value
-// //   if (usingContext.value) {
-// //     for (let i = 0; i < dataSources.value.length; i = i + 2)
-// //       history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-// //   }
-// //   else { history.value.length = 0 }
-// //   if (!message || message.trim() === '')
-// //     return
+    updateChat(
+      +uuid,
+      dataSources.value.length - 1,
+      {
+        dateTime: new Date().toLocaleString(),
+        text: errorMessage,
+        inversion: false,
+        error: true,
+        loading: false,
+        conversationOptions: null,
+        requestOptions: { prompt: message, options: { ...options } },
+      },
+    )
+    scrollToBottomIfAtBottom()
+  }
+  finally {
+    loading.value = false
+  }
+}
+async function onConversation2() {
+  const message = prompt.value
+  if (usingContext.value) {
+    for (let i = 0; i < dataSources.value.length; i = i + 2)
+      history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
+  }
+  else { history.value.length = 0 }
+  if (!message || message.trim() === '')
+    return
 
-// //   controller = new AbortController()
+  controller = new AbortController()
 
-// //   addChat(
-// //     +uuid,
-// //     {
-// //       dateTime: new Date().toLocaleString(),
-// //       text: message,
-// //       inversion: true,
-// //       error: false,
-// //       conversationOptions: null,
-// //       requestOptions: { prompt: message, options: null },
-// //     },
-// //   )
-// //   scrollToBottom()
+  addChat(
+    +uuid,
+    {
+      dateTime: new Date().toLocaleString(),
+      text: message,
+      inversion: true,
+      error: false,
+      conversationOptions: null,
+      requestOptions: { prompt: message, options: null },
+    },
+  )
+  scrollToBottom()
 
-// //   loading.value = true
-// //   prompt.value = ''
+  loading.value = true
+  prompt.value = ''
 
-// //   let options: Chat.ConversationRequest = {}
-// //   const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+  let options: Chat.ConversationRequest = {}
+  const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
 
-// //   if (lastContext && usingContext.value)
-// //     options = { ...lastContext }
+  if (lastContext && usingContext.value)
+    options = { ...lastContext }
 
-// //   addChat(
-// //     +uuid,
-// //     {
-// //       dateTime: new Date().toLocaleString(),
-// //       text: '',
-// //       loading: true,
-// //       inversion: false,
-// //       error: false,
-// //       conversationOptions: null,
-// //       requestOptions: { prompt: message, options: { ...options } },
-// //     },
-// //   )
-// //   scrollToBottom()
+  addChat(
+    +uuid,
+    {
+      dateTime: new Date().toLocaleString(),
+      text: '',
+      loading: true,
+      inversion: false,
+      error: false,
+      conversationOptions: null,
+      requestOptions: { prompt: message, options: { ...options } },
+    },
+  )
+  scrollToBottom()
 
-// //   try {
-// //     const lastText = ''
-// //     const fetchChatAPIOnce = async () => {
-// //       const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
-// //       const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-// //       updateChat(
-// //         +uuid,
-// //         dataSources.value.length - 1,
-// //         {
-// //           dateTime: new Date().toLocaleString(),
-// //           text: lastText + (result ?? ''),
-// //           inversion: false,
-// //           error: false,
-// //           loading: false,
-// //           conversationOptions: null,
-// //           requestOptions: { prompt: message, options: { ...options } },
-// //         },
-// //       )
-// //       scrollToBottomIfAtBottom()
-// //       loading.value = false
-// //       /* await fetchChatAPIProcess<Chat.ConversationResponse>({
-// //         prompt: message,
-// //         options,
-// //         signal: controller.signal,
-// //         onDownloadProgress: ({ event }) => {
-// //           const xhr = event.target
-// //           const { responseText } = xhr
-// //           // Always process the final line
-// //           const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-// //           let chunk = responseText
-// //           if (lastIndex !== -1)
-// //             chunk = responseText.substring(lastIndex)
-// //           try {
-// //             const data = JSON.parse(chunk)
-// //             updateChat(
-// //               +uuid,
-// //               dataSources.value.length - 1,
-// //               {
-// //                 dateTime: new Date().toLocaleString(),
-// //                 text: lastText + (data.text ?? ''),
-// //                 inversion: false,
-// //                 error: false,
-// //                 loading: true,
-// //                 conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-// //                 requestOptions: { prompt: message, options: { ...options } },
-// //               },
-// //             )
+  try {
+    const lastText = ''
+    const fetchChatAPIOnce = async () => {
+      const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
+      const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
+      updateChat(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          dateTime: new Date().toLocaleString(),
+          text: lastText + (result ?? ''),
+          inversion: false,
+          error: false,
+          loading: false,
+          conversationOptions: null,
+          requestOptions: { prompt: message, options: { ...options } },
+        },
+      )
+      scrollToBottomIfAtBottom()
+      loading.value = false
+      /* await fetchChatAPIProcess<Chat.ConversationResponse>({
+        prompt: message,
+        options,
+        signal: controller.signal,
+        onDownloadProgress: ({ event }) => {
+          const xhr = event.target
+          const { responseText } = xhr
+          // Always process the final line
+          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+          let chunk = responseText
+          if (lastIndex !== -1)
+            chunk = responseText.substring(lastIndex)
+          try {
+            const data = JSON.parse(chunk)
+            updateChat(
+              +uuid,
+              dataSources.value.length - 1,
+              {
+                dateTime: new Date().toLocaleString(),
+                text: lastText + (data.text ?? ''),
+                inversion: false,
+                error: false,
+                loading: true,
+                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+                requestOptions: { prompt: message, options: { ...options } },
+              },
+            )
 
-// //             if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-// //               options.parentMessageId = data.id
-// //               lastText = data.text
-// //               message = ''
-// //               return fetchChatAPIOnce()
-// //             }
+            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+              options.parentMessageId = data.id
+              lastText = data.text
+              message = ''
+              return fetchChatAPIOnce()
+            }
 
-// //             scrollToBottomIfAtBottom()
-// //           }
-// //           catch (error) {
-// //             //
-// //           }
-// //         },
-// //       }) */
-// //       updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-// //     }
+            scrollToBottomIfAtBottom()
+          }
+          catch (error) {
+            //
+          }
+        },
+      }) */
+      updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+    }
 
-// //     await fetchChatAPIOnce()
-// //   }
-// //   catch (error: any) {
-// //     const errorMessage = error?.message ?? t('common.wrong')
+    await fetchChatAPIOnce()
+  }
+  catch (error: any) {
+    const errorMessage = error?.message ?? t('common.wrong')
 
-// //     if (error.message === 'canceled') {
-// //       updateChatSome(
-// //         +uuid,
-// //         dataSources.value.length - 1,
-// //         {
-// //           loading: false,
-// //         },
-// //       )
-// //       scrollToBottomIfAtBottom()
-// //       return
-// //     }
+    if (error.message === 'canceled') {
+      updateChatSome(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          loading: false,
+        },
+      )
+      scrollToBottomIfAtBottom()
+      return
+    }
 
-// //     const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+    const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-// //     if (currentChat?.text && currentChat.text !== '') {
-// //       updateChatSome(
-// //         +uuid,
-// //         dataSources.value.length - 1,
-// //         {
-// //           text: `${currentChat.text}\n[${errorMessage}]`,
-// //           error: false,
-// //           loading: false,
-// //         },
-// //       )
-// //       return
-// //     }
+    if (currentChat?.text && currentChat.text !== '') {
+      updateChatSome(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          text: `${currentChat.text}\n[${errorMessage}]`,
+          error: false,
+          loading: false,
+        },
+      )
+      return
+    }
 
-// //     updateChat(
-// //       +uuid,
-// //       dataSources.value.length - 1,
-// //       {
-// //         dateTime: new Date().toLocaleString(),
-// //         text: errorMessage,
-// //         inversion: false,
-// //         error: true,
-// //         loading: false,
-// //         conversationOptions: null,
-// //         requestOptions: { prompt: message, options: { ...options } },
-// //       },
-// //     )
-// //     scrollToBottomIfAtBottom()
-// //   }
-// //   finally {
-// //     loading.value = false
-// //   }
-// // }
+    updateChat(
+      +uuid,
+      dataSources.value.length - 1,
+      {
+        dateTime: new Date().toLocaleString(),
+        text: errorMessage,
+        inversion: false,
+        error: true,
+        loading: false,
+        conversationOptions: null,
+        requestOptions: { prompt: message, options: { ...options } },
+      },
+    )
+    scrollToBottomIfAtBottom()
+  }
+  finally {
+    loading.value = false
+  }
+}
+
 // /* async function onRegenerate(index: number) {
 //   if (loading.value)
 //     return
@@ -964,8 +965,8 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 
 // parseFile函数
 const parseFile = async (fileItem: FileItem) => {
-  if (fileItem.file.size > 100 * 1024 * 1024) {
-    throw new Error('文件大小不能超过100MB');
+  if (fileItem.file.size > 10 * 1024 * 1024) {
+    throw new Error('单个文件大小不能超过10MB');
   }
   const formData = new FormData();
   formData.append('file', fileItem.file);
@@ -1002,7 +1003,7 @@ const parseFile = async (fileItem: FileItem) => {
     }
   } catch (error) {
     const errorMsg = (error as Error).message;
-    throw new Error(`[${fileItem.file.name}] 解析失败: ${errorMsg}`);
+    throw new Error(`[${fileItem.file.name}] 上传失败: ${errorMsg}`);
   }
 };
 
@@ -1010,6 +1011,20 @@ const parseFile = async (fileItem: FileItem) => {
 const handleFileSelect = async (e: Event) => {
   const input = e.target as HTMLInputElement
   if (input.files?.length) {
+    // 1. 验证文件数量
+    if (fileList.value.length + input.files.length > 10) {
+      ms.error('最多上传10个文件')
+      return
+    }
+
+    // 2. 验证文件大小
+    const oversizedFiles = Array.from(input.files).filter(file => file.size > 10 * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      ms.error(`文件大小超过限制：${oversizedFiles.map(f => f.name).join(', ')}`)
+      return
+    }
+
+    // 3. 过滤重复文件
     const existingFiles = new Set(fileList.value.map(f => f.file.name));
     const newFiles = Array.from(input.files)
       .filter(file => !existingFiles.has(file.name)).map(file => ({
@@ -1067,7 +1082,7 @@ const handleCharacterChange = (value: CharacterType) => {
   console.log('Character changed to:', value) // 添加日志
   setCurrentCharacter(value)
   if (uuid) {
-    chatStore.updateHistory(uuid, { character: value })
+    chatStore.updateHistory(Number(uuid), { character: value })
     console.log('History updated with character:', value) // 添加日志
   }
 }
@@ -1096,9 +1111,11 @@ const handleCharacterChange = (value: CharacterType) => {
           </template>
           <template v-else>
             <div>
+              <!-- :templates="templates" -->
+
               <Message v-for="(item, index) of dataSources" :key="index" :attachments="item.attachments"
-                :templates="templates" :date-time="item.dateTime" :text="item.text" :inversion="item.inversion"
-                :error="item.error" :loading="item.loading" @delete="handleDelete(index)" />
+                :date-time="item.dateTime" :text="item.text" :inversion="item.inversion" :error="item.error"
+                :loading="item.loading" @delete="handleDelete(index)" />
               <div class="sticky bottom-0 left-0 flex justify-center">
                 <NButton v-if="loading" type="warning" @click="handleStop">
                   <template #icon>
@@ -1154,12 +1171,25 @@ const handleCharacterChange = (value: CharacterType) => {
 
           <div class="flex flex-1 items-center space-x-2">
             <!-- 文件上传按钮 -->
-            <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect">
-            <HoverButton @click="triggerFileInput" class="flex-shrink-0">
-              <span class="text-xl text-[#4f555e] dark:text-white">
-                <SvgIcon icon="ri:attachment-line" />
-              </span>
-            </HoverButton>
+            <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect"
+              accept=".pdf,.docx,.csv,.pptx,.txt,.md,.xlsx,.json,.png,.jpg,.jpeg">
+            <NTooltip trigger="hover" placement="top">
+              <template #trigger>
+                <HoverButton @click="triggerFileInput" class="flex-shrink-0">
+                  <span class="text-xl text-[#4f555e] dark:text-white">
+                    <SvgIcon icon="ri:attachment-line" />
+                  </span>
+                </HoverButton>
+              </template>
+              <div class="max-w-[200px] text-center text-xs space-y-1">
+                <div class="font-medium">支持上传文件</div>
+                <div>(最多10个，每个10MB)</div>
+                <div class="pt-1 border-t border-gray-200 dark:border-neutral-600">
+                  支持格式：PDF, DOCX, CSV, PPTX, TXT, MD, XLSX, JSON, PNG, JPG, JPEG
+                </div>
+              </div>
+            </NTooltip>
+
 
             <NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption"
               class="flex-1 min-w-0">

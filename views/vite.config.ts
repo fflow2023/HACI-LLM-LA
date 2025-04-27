@@ -23,14 +23,15 @@ function setupPlugins(env: ImportMetaEnv): PluginOption[] {
 
 export default defineConfig((env) => {
   const viteEnv = loadEnv(env.mode, process.cwd()) as unknown as ImportMetaEnv
-  // 设置service的地址
-  const service_address = viteEnv.VITE_SERVICE_ADDRESS || 'http://127.0.0.1:3000'
 
   return {
     resolve: {
       alias: {
-        '@': path.resolve(process.cwd(), 'src'),
-      },
+        // 关键修改：适配 views/src 目录结构
+        '@': path.resolve(__dirname, 'src'),
+        '@views': path.resolve(__dirname, 'src/views'),
+        '@store': path.resolve(__dirname, 'src/store')
+      }
     },
     plugins: setupPlugins(viteEnv),
     server: {
@@ -39,19 +40,18 @@ export default defineConfig((env) => {
       open: false,
       proxy: {
         '/api': {
-          target: service_address,
-
-          changeOrigin: true, // 允许跨域
-          rewrite: path => path.replace('/api/', ''),
-        },
-      },
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, '') // 正确移除 /api 前缀
+        }
+      }
     },
     build: {
       reportCompressedSize: false,
       sourcemap: false,
       commonjsOptions: {
-        ignoreTryCatch: false,
-      },
-    },
+        ignoreTryCatch: false
+      }
+    }
   }
 })

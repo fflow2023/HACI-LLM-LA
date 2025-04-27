@@ -9,6 +9,7 @@ export class ChatGlm6BLLM extends BaseChatModel {
   max_length: number;
   top_p: number;
   history:[][];
+  caller: any;
   constructor(fields, configuration?) {
     super(fields ?? {});
 

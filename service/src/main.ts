@@ -1,45 +1,96 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './module/app.module';
-//import { MyVectorStore } from './vector_store/myVectorStore';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
-dotenv.config({
-  path:  '.env'
-});
+import { getLocalIP } from './common/network-helper'; // 将网络功能抽离
+import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config'
+
+// 加载环境变量（优先级高于系统环境变量）
+dotenv.config({ path: '.env' });
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
-  app.enableCors();
+
+  // 全局验证管道（增强配置）
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,         // 自动过滤非DTO字段
+      forbidNonWhitelisted: true, // 抛出非预期字段错误
+      transform: true,          // 自动类型转换
+      disableErrorMessages: process.env.NODE_ENV === 'production' // 生产环境隐藏错误详情
+    })
+  );
+
+  const configService = app.get(ConfigService)
+
+  const allowedOrigins = configService
+    .get('ALLOWED_ORIGINS')
+    .split(',')
+    .map(origin => origin.trim())
+
+  app.enableCors({
+    origin: allowedOrigins,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  })
+
+  // // 跨域配置
+  // app.enableCors({
+  //   origin: [
+  //     'http://localhost:1002', // 前端实际运行端口
+  //     'http://172.22.80.1:1002',
+  //     'http://172.30.217.12:1002'
+  //   ],
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   allowedHeaders: ['Content-Type', 'Authorization'],
+  //   credentials: true
+  // });
+
+  // Swagger 文档配置（增强安全方案）
   const config = new DocumentBuilder()
-  .setTitle('Cats example')
-  .setDescription('The cats API description')
-  .setVersion('1.0')
-  .addTag('cats')
-  .build();
-const document = SwaggerModule.createDocument(app, config);
-SwaggerModule.setup('api', app, document);
-  
-  let start_lan = true;
-  await app.listen(3000, start_lan ? '0.0.0.0' :'');
-  
-  console.log(`Application is running on: ${await app.getUrl()}`);
-  console.log(`接口文档请查看: ${await app.getUrl()}/api`);
-  if (start_lan) 
-    console.log(`Network: http://${getLocalIP()}:3000`);  // 输出网络IP地址，方便局域网访问
+    .setTitle('LLM Service API')
+    .setDescription('集成用户认证和核心AI能力的API文档')
+    .setVersion('1.0')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      name: 'JWT',
+      description: '输入获取的JWT Token',
+      in: 'header'
+    }, 'JWT-auth')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true, // 保持认证状态
+      tagsSorter: 'alpha',         // 标签排序
+      operationsSorter: 'method'  // 操作排序
+    }
+  });
+
+  // 启动服务（支持局域网访问）
+  const port = process.env.PORT || 3000;
+  const listenHost = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+
+  await app.listen(port, listenHost);
+
+  const dataSource = app.get(DataSource);
+  console.log('已加载实体:', dataSource.entityMetadatas.map(e => e.name));
+
+  // 输出访问信息
+  console.log(`\n服务运行地址:
+  - 本地: http://localhost:${port}
+  - 网络: http://${getLocalIP()}:${port}`);
+
+  console.log(`\n接口文档:
+  - Swagger UI: http://localhost:${port}/api
+  - JSON格式:  http://localhost:${port}/api-json`);
 }
 
-// 获取本地局域网 IP 地址
-function getLocalIP() {
-  const interfaces = require('os').networkInterfaces();
-  for (let interfaceName in interfaces) {
-    for (let i = 0; i < interfaces[interfaceName].length; i++) {
-      const alias = interfaces[interfaceName][i];
-      if (alias.family === 'IPv4' && !alias.internal) {
-        return alias.address;  // 返回局域网IP地址
-      }
-    }
-  }
-  return 'localhost';
-}
+// 启动应用
 bootstrap();

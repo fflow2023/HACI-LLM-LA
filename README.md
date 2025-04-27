@@ -101,11 +101,59 @@
   #CHATGLM_6B_SERVER_URL=
   OPENAI_API_KEY=xxxx
   COHERE_API_KEY=WrJWnnCOXit1EiZ3eGvIoeqK3tPvnWyOp55oeSxW
+
+  #前端地址
+  ALLOWED_ORIGINS=http://localhost:1002,http://172.22.80.1:1002
+
+  # Database
+  DB_HOST=localhost
+  DB_PORT=3306
+  DB_USERNAME=root
+  DB_PASSWORD=自己的数据库密码
+  DB_DATABASE=llm_service
+
+  # JWT 暂时不用管
+  JWT_SECRET=dev_temp_key_123456
+  JWT_EXPIRES_IN=3600s
   ```
+
+- 手动创建mysql数据库
+  ```shell
+  mysql -h localhost -u root -p
+  CREATE DATABASE llm_service 
+  #验证数据库是否创建成功
+  SHOW DATABASES LIKE 'llm_service';
+  ```
+
 - 启动后端(此时仍然在HACI-LLM-LA/service目录下)
   ```shell
   pnpm start:dev
   ```
+
+- 手动插入管理员账户
+  ```shell
+  #明文密码需包含大小写字母及数字，如Ab123456
+  $hash = node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('Ab123456', 10))"
+  Write-Host "生成的哈希值: $hash"
+  #进入数据库
+  mysql -h localhost -u root -p llm_service
+  #插入admin
+  INSERT INTO users (
+  username,
+  password,
+  role,
+  created_at
+  ) VALUES (
+  'admin1',
+  '替换为你的实际哈希值', 
+  'ADMIN',
+  NOW()
+  );
+  ```
+
+- 现在可以在前端进行登录并跳转admin页面，因注册功能尚未完善，如需进入chat页面，请按上述方法生成user账户，并将'ADMIN'改为'USER'
+
+
 
 - 退出service目录，进入models/embedding目录，安装依赖(建议单独拉一个python环境安装，依赖挺容易出问题)
   ```shell

@@ -67,7 +67,7 @@ export function get<T = any>(
 }
 
 export function post<T = any>(
-  { url, data, method = 'POST', headers, onDownloadProgress, signal, beforeRequest, afterRequest }: HttpOption,
+p0: string, value: { username: string; password: string }, { url, data, method = 'POST', headers, onDownloadProgress, signal, beforeRequest, afterRequest }: HttpOption,
 ): Promise<Response<T>> {
   return http<T>({
     url,

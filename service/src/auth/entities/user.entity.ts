@@ -19,6 +19,14 @@ export class User {
   username: string;
 
   @Column({ 
+    type: 'varchar',
+    unique: false,
+    length: 30,
+    comment: 'email(temp)' 
+  })
+  email: string;
+
+  @Column({ 
     type: 'char',
     length: 60,
     comment: '加密后的密码' 

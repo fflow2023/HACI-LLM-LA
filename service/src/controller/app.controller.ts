@@ -29,6 +29,16 @@ export class AppController {
     private readonly fileService: FileService
   ) { }
 
+
+  //sql查询api  (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
+  @Public() 
+  @Post('sql')
+  async runSQL(@Body() body: { sql: string }) {
+    return this.appService.executeSQL(body.sql);
+  }
+
+
+
 // app.controller.ts中的parseFile方法
 @UseInterceptors(FileInterceptor('file', {
   storage: memoryStorage(), // 内存存储仅用于解析接口
@@ -37,7 +47,7 @@ export class AppController {
   }
 }))
 
-@Public() 
+@Public()  // (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
 @Post('file/parse')
 async parseFile(@UploadedFile() file: Express.Multer.File) {
   if (!file || file.size === 0) {
@@ -69,6 +79,7 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
 }
 
   //文件相关处理
+  @Public()  // (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
   @UseInterceptors(FileInterceptor('file'))
   @Post('file')
   @ApiConsumes('multipart/form-data')
@@ -83,11 +94,13 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
     return await this.appService.refactorVectorStore();
 
   }
+  @Public() // 身份验证？
   @Get('file/query-list')
   async queryFileList( ) {
     console.log(await this.appService.getFileList())
     return  await this.appService.getFileList()
   }
+  @Public()  // (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
   @Post('file/delete')
   @ApiBody({
     description: '删除文件',
@@ -98,7 +111,7 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
   }
 
   //Chatglm相关
-  
+  @Public() // 身份验证？
   @Post('chat')
   @ApiBody({
     description: 'Glm对话',
@@ -111,7 +124,8 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
     return await this.appService.chat(body);
 
   }
-  
+
+  @Public() // 身份验证？
   @Post('chatfile')
   @ApiBody({
     description: 'Glm文档问答',
@@ -137,7 +151,8 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
     
     return await this.appService.chatfileOpenAI(body);
   }
-  
+
+  @Public() // 身份验证？
   @Post('chatfileContent')
   @ApiBody({
     description: '文档问答--只获取文档内容',
@@ -149,7 +164,7 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
     return await this.appService.chatfileContent(body);
   }
   
-
+@Public() // 身份验证？
   @Post('chatOpenAI')
   @ApiBody({
     description: 'Gpt对话',
@@ -175,7 +190,7 @@ async parseFile(@UploadedFile() file: Express.Multer.File) {
   }
 
 
-
+  @Public() // 身份验证？
   @Post('set-embedding')
   @ApiBody({
     description: '设置向量化文档的模型目前三选一',

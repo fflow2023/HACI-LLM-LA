@@ -31,6 +31,7 @@ import { JwtModule } from '@nestjs/jwt';
       username: process.env.DB_USERNAME || 'root',
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_DATABASE || 'llm_service',
+      multipleStatements: true, // 多条语句配置
       logging: true, // 开启SQL日志
       logger: 'advanced-console',
       autoLoadEntities: true,
@@ -74,3 +75,4 @@ import { JwtModule } from '@nestjs/jwt';
     FileService],
 })
 export class AppModule { }
+

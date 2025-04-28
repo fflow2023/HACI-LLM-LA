@@ -37,7 +37,7 @@ export class AppController {
   }
 }))
 
-@Public() 
+// @Public() 
 @Post('file/parse')
 async parseFile(@UploadedFile() file: Express.Multer.File) {
   if (!file || file.size === 0) {

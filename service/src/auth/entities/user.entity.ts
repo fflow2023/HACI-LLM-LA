@@ -14,6 +14,7 @@ export class User {
     type: 'varchar',
     unique: true,
     length: 30,
+    nullable: false, 
     comment: '登录用户名' 
   })
   username: string;
@@ -22,13 +23,15 @@ export class User {
     type: 'varchar',
     unique: false,
     length: 30,
-    comment: 'email(temp)' 
+    comment: 'email(temp)' ,
+    default: null,
   })
   email: string;
 
   @Column({ 
     type: 'char',
     length: 60,
+    nullable: false, 
     comment: '加密后的密码' 
   })
   password: string;

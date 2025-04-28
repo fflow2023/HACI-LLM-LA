@@ -93,7 +93,7 @@ const history: any = ref([])
 const { promptList: promptTemplate } = storeToRefs<any>(promptStore) as { promptList: any };
 
 // 是否开启知识库问答
-const active = ref<boolean>(false)
+const active = ref<boolean>(true)   //默认选择开启知识库，可能需要用户自行决定
 
 // 未知原因刷新页面，loading 状态不会重置，手动重置
 dataSources.value.forEach((item, index) => {
@@ -159,7 +159,7 @@ async function onConversation3() {
   console.log('[DEBUG]message:\n' + message);
 
   // 更新上下文处理逻辑
-  if (usingContext.value) {
+  if (usingContext.value) { 
     // 仅处理用户消息（过滤AI回复）
     const userMessages = dataSources.value.filter(item => item.inversion)
     history.value = userMessages.map((msg, index) => [
@@ -350,8 +350,8 @@ async function onConversation3() {
     scrollToBottomIfAtBottom()
   } finally {
 
-    const lastUserMsg = dataSources.value[dataSources.value.length - 1]
-    const lastAIMsg = dataSources.value[dataSources.value.length - 2]
+    // const lastUserMsg = dataSources.value[dataSources.value.length - 1]
+    // const lastAIMsg = dataSources.value[dataSources.value.length - 2]
     //保存消息记录到后端...zhy加油~
 
     loading.value = false
@@ -1081,7 +1081,7 @@ const handleCharacterChange = (value: CharacterType) => {
           <div class="flex items-center justify-between p-4 border-b dark:border-neutral-800">
             <div class="flex items-center space-x-4">
               <NSelect v-model:value="currentCharacter" :options="characterOptions"
-                :placeholder="$t('chat.selectCharacter')" @update:value="handleCharacterChange" />
+                :placeholder="('chat.selectCharacter')" @update:value="handleCharacterChange" />
             </div>
           </div>
           <template v-if="!dataSources.length">

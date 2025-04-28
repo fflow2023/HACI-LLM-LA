@@ -3,10 +3,24 @@ import { FileService } from 'src/service/file';
 import {ChatglmService} from 'src/service/chatglm'
 import { ChatopenaiService } from './chatopenai';
 import { BingService } from './bing';
-
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class AppService {
+  //sql查询函数
+  constructor(private readonly dataSource: DataSource) {}
+// app.service.ts
+async executeSQL(sql: string): Promise<any> {
+  try {
+    return await this.dataSource.query(sql);
+  } catch (error) {
+    return {
+      status: 'error',
+      message: error.message,
+      sql: sql
+    };
+  }
+}
   
  //chatglm交互
     //自由对话

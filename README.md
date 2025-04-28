@@ -2,8 +2,6 @@
 ### 前提警告
 > 本项目使用的node版本为18，如果之前未使用nvm管理node版本，并且下载的node版本非18，可以使用nvm切换
 
-F:\Code\HACIProjects\LearnHelper\HACI-LLM-LA\service\traineddata\chi_sim.traineddata.gz
-F:\Code\HACIProjects\LearnHelper\HACI-LLM-LA\service\src\service\traineddata
 - 查看当前的node版本
   ```shell
   node -v
@@ -153,7 +151,9 @@ F:\Code\HACIProjects\LearnHelper\HACI-LLM-LA\service\src\service\traineddata
   );
   ```
 
-- 现在可以在前端进行登录并跳转admin页面，因注册功能尚未完善，如需进入chat页面，请按上述方法生成user账户，并将'ADMIN'改为'USER'
+- 在前端进行注册和登录,USER会进入chat页面，ADMIN会进入管理员界面。
+- 在管理员界面可以对用户信息进行查看修改(重置密码的默认密码为Ab123456)
+- 在管理员界面可以上传知识库文件，目前chat页面的知识库问答功能是默认开启的，需要运行models层才能生效。
 
 
 

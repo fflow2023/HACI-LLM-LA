@@ -3,14 +3,13 @@ import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { ChatLayout } from '@/views/chat/layout'
 import EditorView from '@/views/Editor/ContentEditor.vue'
-import AdminPanelView from '@/views/admin/AdminPanel.vue'
-import LoginView from "@/views/auth/login.vue" 
+import LoginView from "@/views/auth/login.vue"
 import { useAuthStore } from '@/store/modules/auth'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/login' 
+    redirect: '/login'
   },
   {
     path: '/login',
@@ -21,8 +20,8 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin',
     name: 'Admin',
-    component: AdminPanelView,
-    meta: { 
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: {
       requiresAuth: true,
       allowedRoles: ['ADMIN'] // 仅允许管理员访问
     }

@@ -25,6 +25,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService)
 
+  //配置前端地址
   const allowedOrigins = configService
     .get('ALLOWED_ORIGINS')
     .split(',')

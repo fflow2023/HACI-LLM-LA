@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -19,6 +20,7 @@ import { ChatGlmDto, ChatGptDto, SetEmbeddingDto } from 'src/dto/chat.dto';
 import { FileService } from '../service/file'; // 添加文件服务依赖
 import { memoryStorage } from 'multer';
 import { Public } from 'src/auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 
 
@@ -47,7 +49,7 @@ export class AppController {
   }
 }))
 
-@Public()  // (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
+
 @Post('file/parse')
 async parseFile(@UploadedFile() file: Express.Multer.File) {
   if (!file || file.size === 0) {

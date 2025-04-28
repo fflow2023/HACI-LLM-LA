@@ -1,12 +1,13 @@
 import axios, {
   type AxiosInstance,
 } from 'axios';
+import { router } from '@/router'
 
 // 创建强类型实例
 const service: AxiosInstance = axios.create({
   baseURL: 'http://localhost:3000',
   timeout: 5000,
-  withCredentials: true
+  withCredentials: false
 });
 
 // 请求拦截器
@@ -16,18 +17,26 @@ service.interceptors.request.use(config => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('[AXIOS] 当前请求路径:', config.url)
+  console.log('[AXIOS] 请求头:', config.headers)
   return config;
 });
 
 // 响应拦截器（关键修改）
 service.interceptors.response.use(
-  response => {
-    // ✅ 统一剥离响应包装层
-    return response.data.data; 
-  },
+  response => response.data,
   error => {
-    // ✅ 统一处理 HTTP 错误
-    return Promise.reject(error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      localStorage.removeItem('access_token')
+      router.push({
+        path: '/login',
+        query: {
+          expired: '1',
+          redirect: router.currentRoute.value.fullPath
+        }
+      })
+    }
+    return Promise.reject(error)
   }
 );
 

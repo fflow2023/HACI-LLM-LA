@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     initAuthState() {
       if (typeof window !== 'undefined') { // 安全判断
-        this.token = localStorage.getItem('token') || ''
+        this.token = localStorage.getItem('access_token') || ''
       }
     },
     //登录请求
@@ -72,10 +72,11 @@ export const useAuthStore = defineStore('auth', {
         // 更新状态
         this.token = data.access_token
         this.user = normalizedUser // 存储标准化后的用户数据
-        localStorage.setItem('token', data.access_token)
-
+        localStorage.setItem('access_token', data.access_token)
+        
         // 调试日志
         console.log('[AuthStore] 用户信息已更新:', this.user)
+        console.log('[AuthStore] 当前用户token:', this.token)
 
         return data
       } catch (error: any) {

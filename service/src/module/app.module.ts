@@ -13,7 +13,6 @@ import { AuthModule } from '../auth/auth.module';
 import { User } from '../auth/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -46,7 +45,6 @@ import { JwtModule } from '@nestjs/jwt';
     }),
 
     // 认证模块
-    JwtModule.register({}),
     AuthModule,
 
     // 文件上传模块（保留原有配置）

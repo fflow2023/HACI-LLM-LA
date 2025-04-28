@@ -16,7 +16,7 @@ import { useChatStore, usePromptStore } from '@/store'
 import { t } from '@/locales'
 import { chat, chatOpenAI, chatSiliconflow, chatfile, chatfileOpenai, chatfileContent } from '@/api/chat'
 import { fetchStreamData } from '@/api/api'
-
+import axios from '@/utils/request/axios'
 import { modelsStore } from '@/store/modules/models/models-setting'
 import { useCharacter } from '@/hooks/useCharacter'
 import { characterPrompts, CharacterType } from '@/templates/characterPrompts'
@@ -968,41 +968,22 @@ const parseFile = async (fileItem: FileItem) => {
   if (fileItem.file.size > 10 * 1024 * 1024) {
     throw new Error('单个文件大小不能超过10MB');
   }
+
   const formData = new FormData();
   formData.append('file', fileItem.file);
 
   try {
-    const response = await fetch('/api/file/parse', {
-      method: 'POST',
-      body: formData,
+    // ✅ 使用统一配置的 axios 实例
+    const response = await axios.post('/file/parse', formData, {
+      headers: {
+        // ✅ 自动携带 Token（通过拦截器）
+        'Content-Type': 'multipart/form-data' // 必须显式声明
+      }
     });
 
-    if (!response.ok) {
-      // 尝试解析错误信息
-      let errorMessage = response.statusText;
-      try {
-        const errorBody = await response.json();
-        errorMessage = errorBody.message || errorMessage;
-      } catch (e) {
-        // 无法解析JSON时保持默认状态文本
-      }
-      throw new Error(errorMessage);
-    }
-
-    const rawData = await response.text();
-
-    // 新增格式处理
-    try {
-      const parsed = JSON.parse(rawData);
-      if (parsed.data) {
-        return parsed.data; // 直接返回data内容
-      }
-      throw new Error('Invalid data format');
-    } catch (e) {
-      return rawData; // 非JSON格式时返回原始内容
-    }
-  } catch (error) {
-    const errorMsg = (error as Error).message;
+    return response.data;
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.message || error.message;
     throw new Error(`[${fileItem.file.name}] 上传失败: ${errorMsg}`);
   }
 };

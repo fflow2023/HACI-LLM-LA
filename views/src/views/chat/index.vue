@@ -153,13 +153,15 @@ function handleSubmit() {
 
 // 延续接口，silicon flow的接口用onConversation3函数实现
 async function onConversation3() {
+  loading.value = true
+
   // 获取最新的用户输入（dataSources长度-1是刚添加的用户消息）
   const lastUserMsg = dataSources.value[dataSources.value.length - 1]
   let message = lastUserMsg?.requestOptions?.prompt || ''  //message就是刚刚的版合并消息
   console.log('[DEBUG]message:\n' + message);
 
   // 更新上下文处理逻辑
-  if (usingContext.value) { 
+  if (usingContext.value) {
     // 仅处理用户消息（过滤AI回复）
     const userMessages = dataSources.value.filter(item => item.inversion)
     history.value = userMessages.map((msg, index) => [
@@ -177,7 +179,6 @@ async function onConversation3() {
 
   scrollToBottom()
 
-  loading.value = true
   prompt.value = ''
 
   let options: Chat.ConversationRequest = {}
@@ -219,15 +220,20 @@ async function onConversation3() {
 
         let documentContent: DocumentContent;
         if (active.value) {
-          // 1. get the document content
-          documentContent = await chatfileContent({
-            message: message,
-            hyperparameters: {
-              document_number: 2,
-            }
-          })
 
-          console.log("****", documentContent)
+          // 1. 获取知识库内容
+          try {
+            documentContent = await chatfileContent({
+              message: message,
+              hyperparameters: {
+                document_number: 2,
+              }
+            })
+          } catch (error: any) {
+            throw new Error("知识库查询失败，请检查网络连接或联系管理员") // 终止后续处理
+          }
+          // console.log("****", documentContent)
+
           // 2. add the prompt to the message
           let mergedContent = ''
           for (let i = 0; i < documentContent.data.content.length; i++) {
@@ -243,7 +249,8 @@ async function onConversation3() {
           message: message,
           history: history.value,
           stream: stream,
-          character: currentCharacter.value // 添加性格类型
+          character: currentCharacter.value, // 添加性格类型
+          signal: controller.signal // 传入 signal 用于stream
         });
 
         function step(value?: any) {
@@ -260,9 +267,8 @@ async function onConversation3() {
               scrollToBottomIfAtBottom()
             }
           } else {
-            loading.value = false;
             lastText += dataSources.value[dataSources.value.length - 1].text
-
+            loading.value = false
             updateChat(
               +uuid,
               dataSources.value.length - 1,
@@ -278,7 +284,6 @@ async function onConversation3() {
             )
           }
         }
-        loading.value = true;
         step();
       } else {
         let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream })
@@ -300,11 +305,11 @@ async function onConversation3() {
         },
       )
       scrollToBottomIfAtBottom()
-      loading.value = false;
       updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
     }
     await fetchChatAPIOnce()
   } catch (error: any) {
+    loading.value = false
     const errorMessage = error?.message ?? t('common.wrong')
 
     if (error.message === 'canceled') {
@@ -349,16 +354,13 @@ async function onConversation3() {
     )
     scrollToBottomIfAtBottom()
   } finally {
-
-    // const lastUserMsg = dataSources.value[dataSources.value.length - 1]
-    // const lastAIMsg = dataSources.value[dataSources.value.length - 2]
-    //保存消息记录到后端...zhy加油~
-
-    loading.value = false
   }
+  // const lastUserMsg = dataSources.value[dataSources.value.length - 1]
+  // const lastAIMsg = dataSources.value[dataSources.value.length - 2]
+  //保存消息记录到后端...zhy加油~
 }
 
-
+// onConversation 和onConversation2 不用
 async function onConversation() {
   const message = prompt.value
   if (usingContext.value) {
@@ -875,26 +877,55 @@ function handleClear() {
 }
 
 function handleEnter(event: KeyboardEvent) {
+  if (loading.value) {  // 新增loading状态检查
+    event.preventDefault()
+    return
+  }
+
   if (!isMobile.value) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
-      handleSubmit()
+      !buttonDisabled.value && handleSubmit()  // 新增禁用状态检查
     }
   }
   else {
     if (event.key === 'Enter' && event.ctrlKey) {
       event.preventDefault()
-      handleSubmit()
+      !buttonDisabled.value && handleSubmit()  // 新增禁用状态检查
     }
   }
 }
 
+//手动停止响应
 function handleStop() {
   if (loading.value) {
     controller.abort()
     loading.value = false
+    
+    // 立即更新最后一条消息状态
+    const currentIndex = dataSources.value.length - 1
+    updateChatSome(
+      +uuid,
+      currentIndex,
+      {
+        loading: false,
+        text: `${dataSources.value[currentIndex].text}\n[已手动停止响应]`
+      }
+    )
+    
+    // 强制滚动到底部
+    scrollToBottomIfAtBottom()
+    
+    // 创建新控制器以备下次使用
+    controller = new AbortController()
   }
 }
+// function handleStop() {
+//   if (loading.value) {
+//     controller.abort()
+//     loading.value = false
+//   }
+// }
 
 // 可优化部分
 // 搜索选项计算，这里使用value作为索引项，所以当出现重复value时渲染异常(多项同时出现选中效果)
@@ -1112,6 +1143,10 @@ const handleCharacterChange = (value: CharacterType) => {
     </main>
     <footer :class="footerClass">
       <div class="w-full max-w-screen-xl m-auto">
+        <!-- 调试信息 -->
+        <!-- <div class="text-xs text-red-500 mb-1">
+          buttonDisabled: {{ buttonDisabled }}, loading: {{ loading }}
+        </div> -->
 
         <!-- 文件预览区域 -->
         <div v-if="fileList.length" class="mb-2 flex flex-wrap gap-2">
@@ -1130,6 +1165,11 @@ const handleCharacterChange = (value: CharacterType) => {
 
         <div class="flex items-center justify-between space-x-2">
           <!-- 左侧功能按钮组 -->
+          <NSwitch v-model:value="active" class="flex-shrink-0 w-20">
+            <template #checked>知识库</template>
+            <template #unchecked>知识库&nbsp;&nbsp;</template>
+          </NSwitch>
+
           <div class="flex items-center space-x-2">
             <HoverButton @click="handleClear" class="flex-shrink-0">
               <span class="text-xl text-[#4f555e] dark:text-white">

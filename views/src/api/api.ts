@@ -14,7 +14,7 @@ const staticSystemPrompts = {
 
 export const api = async (data: object): Promise<any> => {
 	return await request({
-	  ...data,
+		...data,
 	})
 }
 
@@ -34,7 +34,7 @@ interface remoteapiParams {
 
 type MaxTokensBase = {
 	[key: string]: number;
-  };
+};
 
 let max_tokens_base: MaxTokensBase = {
 	"deepseek-ai/DeepSeek-V3": 4096,
@@ -51,31 +51,31 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	let postparams = params['postparams']
 	let stream = postparams['stream']
 	let historylist = getHistoryList(params['postparams']['history'])
-	
+
 	// 获取性格类型
 	const character = postparams['character'] as CharacterType || 'strict'
 	console.log('Selected character:', character) // 添加日志
-	
+
 	const characterInfo = characterPrompts[character]
 	console.log('Character info:', characterInfo) // 添加日志
-	
+
 	// 获取静态系统提示词
 	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
 	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
-	
+
 	// 获取动态性格提示词
 	const characterPrompt = characterInfo.prompt
 	console.log('Character prompt:', characterPrompt) // 添加日志
-	
+
 	// 组合系统提示词
 	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
 	console.log('Final system prompt:', systemPrompt) // 添加日志
-	
+
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]
 
 	// 目前暂时只实现一种情况
-	if(base == 'siliconflow' && kind == 'chat' && methods == 'post') {
+	if (base == 'siliconflow' && kind == 'chat' && methods == 'post') {
 		const options = {
 			method: 'POST',
 			headers: {
@@ -106,7 +106,7 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 				.catch(err => {
 					console.error(err);
 					return null;  // In case of an error, return null or handle appropriately
-			});
+				});
 			return res
 		} else {
 			// TODO: 还没完成流式生成的代码修改
@@ -116,66 +116,66 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 				...options,
 				responseType: 'stream'
 			})
-			.then(response => {
-				let firstReasoningContentOutput = true;
-				let firstContentOutput = true;
+				.then(response => {
+					let firstReasoningContentOutput = true;
+					let firstContentOutput = true;
 
-				// 流式处理响应数据
-				response.data.on('data', (chunk: string) => {
-					const chunkStr = chunk.toString().trim();
+					// 流式处理响应数据
+					response.data.on('data', (chunk: string) => {
+						const chunkStr = chunk.toString().trim();
 
-					if (chunkStr.startsWith('data:')) {
-						let dataStr = chunkStr.slice(6).trim(); // 去除"data:"前缀和之后的空格
-						if (dataStr === "[DONE]") {
-							console.log("\n\n============[DONE]============\n");
-							return;
-						}
-
-						try {
-							// 解析 JSON 数据
-							const chunkJson = JSON.parse(dataStr);
-							if (chunkJson.choices && Array.isArray(chunkJson.choices) && chunkJson.choices.length > 0) {
-								const choice = chunkJson.choices[0];
-								const delta = choice.delta || {};
-
-								// 获取思考过程信息
-								const reasoningContent = delta.reasoning_content;
-								// 获取结果内容
-								const content = delta.content;
-								// 获取完成原因
-								const finishReason = choice.finish_reason;
-
-								if (finishReason) {
-									console.log("\n\n\n==>查看结束原因，如果是stop，表示是正常结束的。finish_reason =", finishReason);
-								}
-
-								// 打印思考过程：reasoning_content（如果有）
-								if (reasoningContent !== null) {
-									if (firstReasoningContentOutput) {
-										console.log("思考过程:");
-										firstReasoningContentOutput = false;
-									}
-									process.stdout.write(reasoningContent);
-								}
-
-								// 打印结果内容：content（如果有）
-								if (content !== null) {
-									if (firstContentOutput) {
-										console.log("\n\n==============================\n结果:");
-										firstContentOutput = false;
-									}
-									process.stdout.write(content);
-								}
+						if (chunkStr.startsWith('data:')) {
+							let dataStr = chunkStr.slice(6).trim(); // 去除"data:"前缀和之后的空格
+							if (dataStr === "[DONE]") {
+								console.log("\n\n============[DONE]============\n");
+								return;
 							}
-						} catch (error) {
-							console.error(`JSON解码错误: ${error}`);
+
+							try {
+								// 解析 JSON 数据
+								const chunkJson = JSON.parse(dataStr);
+								if (chunkJson.choices && Array.isArray(chunkJson.choices) && chunkJson.choices.length > 0) {
+									const choice = chunkJson.choices[0];
+									const delta = choice.delta || {};
+
+									// 获取思考过程信息
+									const reasoningContent = delta.reasoning_content;
+									// 获取结果内容
+									const content = delta.content;
+									// 获取完成原因
+									const finishReason = choice.finish_reason;
+
+									if (finishReason) {
+										console.log("\n\n\n==>查看结束原因，如果是stop，表示是正常结束的。finish_reason =", finishReason);
+									}
+
+									// 打印思考过程：reasoning_content（如果有）
+									if (reasoningContent !== null) {
+										if (firstReasoningContentOutput) {
+											console.log("思考过程:");
+											firstReasoningContentOutput = false;
+										}
+										process.stdout.write(reasoningContent);
+									}
+
+									// 打印结果内容：content（如果有）
+									if (content !== null) {
+										if (firstContentOutput) {
+											console.log("\n\n==============================\n结果:");
+											firstContentOutput = false;
+										}
+										process.stdout.write(content);
+									}
+								}
+							} catch (error) {
+								console.error(`JSON解码错误: ${error}`);
+							}
 						}
-					}
+					});
+				})
+				.catch(error => {
+					console.error(`请求失败，错误信息: ${error}`);
 				});
-			})
-			.catch(error => {
-				console.error(`请求失败，错误信息: ${error}`);
-			});
 		}
 	}
 }
@@ -186,55 +186,63 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 
 
 interface Delta {
-    reasoning_content: string | null;
-    content: string | null;
+	reasoning_content: string | null;
+	content: string | null;
 }
 
 interface Choice {
-    delta?: Delta;
-    finish_reason?: string;
+	delta?: Delta;
+	finish_reason?: string;
 }
 
 interface ChunkJson {
-    choices: Choice[];
+	choices: Choice[];
 }
 
 // 修改fetchStreamData函数
-export function* fetchStreamData(postparams: postParams) {
+export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal }) {
+	// 添加 abort 信号监听
+	if (postparams.signal) {
+		postparams.signal.addEventListener('abort', () => {
+			console.log('Stream aborted by controller')
+			reader?.cancel() // 主动取消流式读取
+		})
+	}
+
 	let stream = postparams['stream']
 	let historylist = getHistoryList(postparams['history'])
-	
+
 	// 获取性格类型
 	const character = postparams['character'] as CharacterType || 'strict'
 	console.log('Selected character:', character) // 添加日志
-	
+
 	const characterInfo = characterPrompts[character]
 	console.log('Character info:', characterInfo) // 添加日志
-	
+
 	// 获取静态系统提示词
 	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
 	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
-	
+
 	// 获取动态性格提示词
 	const characterPrompt = characterInfo.prompt
 	console.log('Character prompt:', characterPrompt) // 添加日志
-	
+
 	// 组合系统提示词
 	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
 	console.log('Final system prompt:', systemPrompt) // 添加日志
-	
+
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]
 
 
 
-    // fetch 的返回类型为 Response
-    const response: Response = yield fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            Authorization: 'Bearer ' + import.meta.env.VITE_SILICONFLOW_API_KEY,
-            'Content-Type': 'application/json'
-        },
+	// fetch 的返回类型为 Response
+	const response: Response = yield fetch('https://api.siliconflow.cn/v1/chat/completions', {
+		method: 'POST',
+		headers: {
+			Authorization: 'Bearer ' + import.meta.env.VITE_SILICONFLOW_API_KEY,
+			'Content-Type': 'application/json'
+		},
 		body: JSON.stringify({
 			model: import.meta.env.VITE_SILICONFLOW_MODEL,
 			stream: stream,
@@ -246,21 +254,21 @@ export function* fetchStreamData(postparams: postParams) {
 			n: 1,
 			messages: systempormpt.concat(historylist, userinput)
 		})
-    });
+	});
 
-    const reader = response.body?.getReader();  // `body` 可能是 null
-    if (!reader) {
-        console.error('Failed to get reader from response body');
-        return;
-    }
+	const reader = response.body?.getReader();  // `body` 可能是 null
+	if (!reader) {
+		console.error('Failed to get reader from response body');
+		return;
+	}
 
-    const decoder = new TextDecoder();
-    let done: boolean = false, value: Uint8Array;
+	const decoder = new TextDecoder();
+	let done: boolean = false, value: Uint8Array;
 
-    while (!done) {
-        // 暂停执行，等待外部继续
-        ({ done, value } = yield reader.read());
-        const strs = decoder.decode(value, { stream: true }).trim();
+	while (!done) {
+		// 暂停执行，等待外部继续
+		({ done, value } = yield reader.read());
+		const strs = decoder.decode(value, { stream: true }).trim();
 
 		const chunkStrs = strs.split('data:');
 
@@ -303,7 +311,7 @@ export function* fetchStreamData(postparams: postParams) {
 			}
 		}
 
-    }
+	}
 }
 
 
@@ -312,21 +320,21 @@ export function* fetchStreamData(postparams: postParams) {
 	const gen = fetchStreamData(params);
 
 	function step(value?: any) {
-        const result = gen.next(value);
+		const result = gen.next(value);
 
-        if (!result.done) {
-            // 检查 result.value 是否为 Promise，若是则等待其完成，否则直接打印
-            if (result.value instanceof Promise) {
-                result.value.then(data => step(data)).catch(err => gen.throw(err));
-            } else {
-                // 如果是同步数据，直接打印
-                process.stdout.write(result.value);
-                step(); // 继续执行生成器
-            }
-        }
-    }
+		if (!result.done) {
+			// 检查 result.value 是否为 Promise，若是则等待其完成，否则直接打印
+			if (result.value instanceof Promise) {
+				result.value.then(data => step(data)).catch(err => gen.throw(err));
+			} else {
+				// 如果是同步数据，直接打印
+				process.stdout.write(result.value);
+				step(); // 继续执行生成器
+			}
+		}
+	}
 
-    step();
+	step();
 
 
 */

@@ -23,10 +23,10 @@ export class User {
     type: 'varchar',
     unique: false,
     length: 30,
-    comment: 'email(temp)' ,
+    comment: '姓名' ,
     default: null,
   })
-  email: string;
+  name: string;
 
   @Column({ 
     type: 'char',

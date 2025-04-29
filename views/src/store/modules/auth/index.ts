@@ -16,16 +16,18 @@ interface UserInfo {
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: '',
-    user: null as UserInfo | null, // 严格类型约束
+    token: localStorage.getItem('access_token') || null,
+    user: localStorage.getItem('userRole') || null,
   }),
 
-  actions: {
+  actions: {    
     initAuthState() {
       if (typeof window !== 'undefined') { // 安全判断
-        this.token = localStorage.getItem('access_token') || ''
+        this.token = localStorage.getItem('access_token') || '',
+        this.user = localStorage.getItem('userRole') || 'USER'
       }
     },
+    
     //登录请求
     async login(credentials: LoginParams, config?: RequestConfig) {
       try {
@@ -71,9 +73,10 @@ export const useAuthStore = defineStore('auth', {
 
         // 更新状态
         this.token = data.access_token
-        this.user = normalizedUser // 存储标准化后的用户数据
+        this.user = normalizedUser.role // 存储标准化后的用户数据
         localStorage.setItem('access_token', data.access_token)
-        
+        localStorage.setItem('userRole', normalizedUser.role)
+
         // 调试日志
         console.log('[AuthStore] 用户信息已更新:', this.user)
         console.log('[AuthStore] 当前用户token:', this.token)
@@ -140,12 +143,13 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.token = ''
       this.user = null
-      localStorage.removeItem('token')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('userRole') // 同步清理
     }
   },
 
   getters: {
     isAuthenticated: (state) => !!state.token,
-    isAdmin: (state) => state.user?.role === 'ADMIN' // 精确匹配
+    isAdmin: (state) => state.user === 'ADMIN' // 精确匹配
   }
 })

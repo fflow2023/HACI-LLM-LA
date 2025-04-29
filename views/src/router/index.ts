@@ -46,6 +46,9 @@ const routes: RouteRecordRaw[] = [
     path: '/chat',
     name: 'chat',
     component: ChatLayout,
+    meta: {
+      requiresAuth: true,  //c
+    },
     children: [
       {
         path: '/chat/:uuid?',
@@ -98,12 +101,11 @@ router.beforeEach((to, from, next) => {
   // 角色权限校验（添加类型保护）
   const requiredRoles = to.meta.allowedRoles as string[]
   if (requiredRoles) {
-    const userRole = authStore.user?.role
+    const userRole = authStore.user
     if (!userRole || !requiredRoles.includes(userRole)) {
       return next('/chat')
     }
   }
-
   next()
 })
 

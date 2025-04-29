@@ -54,10 +54,10 @@ let controller = new AbortController()
   }
 
   // 挂载时加载模板
-  onMounted(() => {
-    loadTemplates()
-    console.log('[Debug] chat挂载模板成功 ', {})
-  })
+  // onMounted(() => {
+  //   loadTemplates()
+  //   console.log('[Debug] chat挂载模板成功 ', {})
+  // })
   // 以上为文本编辑器相关内容👆
 }
 

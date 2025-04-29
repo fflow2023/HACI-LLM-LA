@@ -6,7 +6,13 @@ import { EmbeddingManager } from 'src/embeddings/embedding-manager.bak';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
 import { DocxLoader } from "langchain/document_loaders/fs/docx";
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
-import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
+import { CSVLoader } from "langchain/document_loaders/fs/csv";
+import { DirectoryLoader, UnknownHandling } from "langchain/document_loaders/fs/directory";
+import { JSONLoader } from "langchain/document_loaders/fs/json";
+import { JSONLinesLoader } from "langchain/document_loaders/fs/json";
+import { EPubLoader } from "langchain/document_loaders/fs/epub";
+import { SRTLoader } from "langchain/document_loaders/fs/srt";
+import { UnstructuredLoader } from "langchain/document_loaders/fs/unstructured";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { ocrService } from './ocr.service'; // 本地的OCR服务
@@ -15,13 +21,14 @@ import { v4 as uuid } from 'uuid';
 import { createHash } from 'crypto';
 import os from 'os';
 import chardet from 'chardet';
-
+import { BaseDocumentLoader } from 'langchain/dist/document_loaders/base';
+import { Document } from "langchain/document";
 
 @Injectable()
 export class FileService {
   private readonly allowedExtensions = new Set([
     'txt', 'md', 'docx', 'pdf', 'png', 'jpg', 'jpeg',
-    'csv', 'pptx', 'xlsx', 'json','xml', 'html', 'vue', 'py', 'js', 'ts',
+    'csv', 'pptx', 'xlsx', 'json', 'xml', 'html', 'vue', 'py', 'js', 'ts',
     'java', 'cpp', 'c', 'kt', 'rs', 'tex'
   ]);
 
@@ -60,7 +67,8 @@ export class FileService {
     throw new Error(`Unsupported file type: ${fileExt}`);
   }
 
-  async parseMemoryFile(buffer: Buffer, originalName: string) {
+  // async parseMemoryFile(buffer: Buffer, originalName: string) {
+  async parseMemoryFile(buffer: Buffer, originalName: string): Promise<string> {
     let tempDir: string;
     try {
       const fileType = this.detectFileType(buffer, originalName);
@@ -79,6 +87,7 @@ export class FileService {
       fs.writeFileSync(tempPath, buffer);
 
       return await this.parseFile(tempPath, fileType);
+
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new HttpException(
@@ -92,6 +101,40 @@ export class FileService {
       }
     }
   }
+
+  //供知识库向量化调用的解析方法
+  // async parseMemoryFile1(buffer: Buffer, originalName: string): Promise<string> {
+  //   let tempDir: string;
+  //   try {
+  //     const fileType = this.detectFileType(buffer, originalName);
+  //     if (!this.allowedExtensions.has(fileType)) {
+  //       throw new HttpException(
+  //         { statusCode: HttpStatus.UNSUPPORTED_MEDIA_TYPE, message: `Unsupported file types: ${fileType}` },
+  //         HttpStatus.UNSUPPORTED_MEDIA_TYPE
+  //       );
+  //     }
+
+  //     // 创建带时间戳的唯一临时目录
+  //     tempDir = path.join('./temp', `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`);
+  //     fs.mkdirSync(tempDir, { recursive: true });
+
+  //     const tempPath = path.join(tempDir, `upload.${fileType}`);
+  //     fs.writeFileSync(tempPath, buffer);
+
+  //     return parsedContent; 
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+  //     throw new HttpException(
+  //       { statusCode: HttpStatus.BAD_REQUEST, message: error.message || 'File processing failed' },
+  //       HttpStatus.BAD_REQUEST
+  //     );
+  //   } finally {
+  //     // 统一清理整个临时目录
+  //     if (tempDir && fs.existsSync(tempDir)) {
+  //       fs.rmSync(tempDir, { recursive: true, force: true });
+  //     }
+  //   }
+  // }
 
   // 修改parseFile方法
   async parseFile(filePath: string, fileType: string) {
@@ -174,17 +217,17 @@ export class FileService {
     try {
       // 读取文件为Buffer
       const buffer = fs.readFileSync(filePath);
-      
+
       // 尝试UTF-8解码
       let content = buffer.toString('utf-8');
-      
+
       // 检查乱码
       if (/�/.test(content)) {
         // 使用iconv-lite解码为GBK
         const iconv = require('iconv-lite');
         content = iconv.decode(buffer, 'gbk');
       }
-      
+
       return content;
     } catch (error) {
       throw new Error(`文件解析失败: ${error.message}`);
@@ -412,21 +455,44 @@ export class FileService {
   // }
 
 
-  //上传文件向量化
+  // 上传文件向量化
   async refactorVectorStore() {
     const loader = new DirectoryLoader(
       "./fileUpload",
       {
-        //".json": (path) => new JSONLoader(path, "/texts"),
-        //".jsonl": (path) => new JSONLinesLoader(path, "/html"),
-        ".txt": (path) => new TextLoader(path),
-        ".py": (path) => new TextLoader(path),
-        ".docx": (path) => new DocxLoader(path),
         ".pdf": (path) => new PDFLoader(path),
-        //".csv": (path) => new CSVLoader(path, "text"),
+        ".csv": (path) => new CSVLoader(path),       // 新增 CSV 支持
+        ".docx": (path) => new DocxLoader(path),
+        ".epub": (path) => new EPubLoader(path),            // 新增 EPUB 支持
+        ".srt": (path) => new SRTLoader(path),              // 新增 SRT 字幕支持
+        ".jsonl": (path) => new JSONLinesLoader(path, "/html"), // 新增 JSONL 支持
+        // 特殊格式专用loader
+
+        // 纯文本格式（共20种直接列出）
+        ".txt": (path) => new TextLoader(path),
+        ".md": (path) => new TextLoader(path),
+        ".py": (path) => new TextLoader(path),
+        ".js": (path) => new TextLoader(path),
+        ".ts": (path) => new TextLoader(path),
+        ".java": (path) => new TextLoader(path),
+        ".cpp": (path) => new TextLoader(path),
+        ".c": (path) => new TextLoader(path),
+        ".kt": (path) => new TextLoader(path),
+        ".rs": (path) => new TextLoader(path),
+        ".tex": (path) => new TextLoader(path),
+        ".vue": (path) => new TextLoader(path),
+        ".html": (path) => new TextLoader(path),
+        ".xml": (path) => new TextLoader(path),
+        ".json": (path) => new TextLoader(path),
+        ".css": (path) => new TextLoader(path),
+        ".sh": (path) => new TextLoader(path),
+        ".yaml": (path) => new TextLoader(path),
+        ".yml": (path) => new TextLoader(path),
+        ".conf": (path) => new TextLoader(path),
+        ".": (path) => new TextLoader(path)  //DirectoryLoader 的原生实现只做精确匹配，没有通配符逻辑 这个是无后缀名的文件
       }
     );
-    // Split the docs into chunks
+
     // 文本切割,将文档拆分为块
     const textsplitter = new RecursiveCharacterTextSplitter({
       separators: ["\n\n", "\n", "。", "！", "？"],
@@ -434,7 +500,7 @@ export class FileService {
       chunkOverlap: 100,
     })
     const docs = await loader.loadAndSplit(textsplitter);
-    // Load the docs into the vector store
+
     // 加载向量存储库 
     const vectorStore = await MemoryVectorStore.fromDocuments(
       docs,
@@ -442,6 +508,7 @@ export class FileService {
     );
     GlobalService.globalVar = vectorStore
   }
+
 
   //获取本地文件列表
   async getFileList() {

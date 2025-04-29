@@ -241,8 +241,8 @@ async function onConversation3() {
           }
 
           console.log("referenced content: ", mergedContent)
-
-          message = `请根据以下参考资料回答问题：\n\n${mergedContent}\n\n 用户的输入：${message}`
+          if(documentContent.data.content.length>0)
+            message = `请根据以下参考资料回答问题：\n\n${mergedContent}\n\n 用户的输入：${message}`
         }
 
         const gen = fetchStreamData({
@@ -1193,7 +1193,7 @@ const handleCharacterChange = (value: CharacterType) => {
           <div class="flex flex-1 items-center space-x-2">
             <!-- 文件上传按钮 -->
             <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect"
-              accept=".pdf,.docx,.csv,.pptx,.txt,.md,.xlsx,.json,.png,.jpg,.jpeg">
+            accept=".pdf,.docx,.csv,.pptx,.txt,.md,.xlsx,.json,.png,.jpg,.jpeg,.xml,.html,.vue,.py,.js,.ts,.java,.cpp,.c,.kt,.rs,.tex">
             <NTooltip trigger="hover" placement="top">
               <template #trigger>
                 <HoverButton @click="triggerFileInput" class="flex-shrink-0">
@@ -1206,7 +1206,7 @@ const handleCharacterChange = (value: CharacterType) => {
                 <div class="font-medium">支持上传文件</div>
                 <div>(最多10个，每个10MB)</div>
                 <div class="pt-1 border-t border-gray-200 dark:border-neutral-600">
-                  支持格式：PDF, DOCX, CSV, PPTX, TXT, MD, XLSX, JSON, PNG, JPG, JPEG
+                  支持格式：PDF, DOCX, PPTX, XLSX, JPG, TXT等
                 </div>
               </div>
             </NTooltip>

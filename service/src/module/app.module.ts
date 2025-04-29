@@ -1,5 +1,5 @@
 //HACI-LLM-LA\service\src\module\app.module.ts
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -67,10 +67,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
   controllers: [AppController],
   providers: [{
     provide: APP_GUARD,
-    useClass: JwtAuthGuard, // 使所有路由默认需要认证
+    useClass: JwtAuthGuard, // 使所有路由默认需要登录认证
   },
     AppService,
     FileService],
 })
-export class AppModule { }
-
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly appService: AppService) {}
+  async onApplicationBootstrap() {
+    await this.appService.refactorVectorStore();
+  }
+}

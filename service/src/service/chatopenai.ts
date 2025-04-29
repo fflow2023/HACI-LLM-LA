@@ -70,30 +70,4 @@ export class ChatopenaiService {
         return response
       }
       
-      async chatfileContent(body) {
-        const { message, hyperparameters} = body;
-        console.log("step1" , message);
-
-        const vectorStore = GlobalService.globalVar
-        const result = await vectorStore.similaritySearch(message, hyperparameters['document_number']);
-        console.log('step2', result);
-        
-        let fileUrl = []
-        let content = []
-        
-        for(let i = 0; i < result.length; i++) {
-          fileUrl.push(
-            '/static/' +
-            result[i].metadata.source.split("/")[result[i].metadata.source.split("/").length - 1]
-          )
-          content.push(
-            result[i].pageContent
-          )
-        }
-        
-        return {
-          content: content,
-          url: fileUrl
-        }
-      }
   }

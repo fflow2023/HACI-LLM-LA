@@ -9,7 +9,8 @@ import { SvgIcon } from '@/components/common'
 import { getCurrentDate } from '@/utils/functions'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
-
+import { useAuthStore } from '@/store/modules/auth'
+import { useRouter } from 'vue-router'
 // const appStore = useAppStore()
 /* const userStore = useUserStore() */
 
@@ -157,6 +158,15 @@ function handleImportButtonClick(): void {
   if (fileInput)
     fileInput.click()
 }
+
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -257,6 +267,25 @@ function handleImportButtonClick(): void {
           {{ $t('common.reset') }}
         </NButton>
       </div> -->
+         <!-- 新增退出登录按钮 -->
+         <div
+        class="flex items-center space-x-4"
+        :class="isMobile && 'items-start'"
+      >
+        <span class="flex-shrink-0 w-[100px]">{{ $t('用户状态') }}</span>
+        <NPopconfirm placement="bottom" @positive-click="handleLogout">
+          <template #trigger>
+            <NButton size="small" type="error" secondary>
+              <template #icon>
+                <SvgIcon icon="ri:logout-box-r-line" />
+              </template>
+              {{ $t('退出登录') }}
+            </NButton>
+          </template>
+          {{ $t('确认退出登录') }}
+        </NPopconfirm>
+      </div>
+
     </div>
   </div>
 </template>

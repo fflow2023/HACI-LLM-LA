@@ -14,15 +14,16 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { createHash } from 'crypto';
 import os from 'os';
-const officeParser = require('officeparser');
+import chardet from 'chardet';
 
 
 @Injectable()
 export class FileService {
   private readonly allowedExtensions = new Set([
     'txt', 'md', 'docx', 'pdf', 'png', 'jpg', 'jpeg',
-    'csv', 'pptx', 'xlsx', 'json'
-  ]);  // txt md doc docx
+    'csv', 'pptx', 'xlsx', 'json','xml', 'html', 'vue', 'py', 'js', 'ts',
+    'java', 'cpp', 'c', 'kt', 'rs', 'tex'
+  ]);
 
   private readonly officeParserConfig = {
     ignoreNotes: true,          // 忽略PPT备注
@@ -30,24 +31,24 @@ export class FileService {
     outputErrorToConsole: false // 禁止输出内部错误
   };
 
-  private classifyFileType(ext: string): 'office' | 'text' | 'image'  {
+  private classifyFileType(ext: string): 'office' | 'text' | 'image' {
     switch (ext) {
       case 'docx':
       case 'pptx':
       case 'xlsx':
         return 'office';
-      case 'txt':
-      case 'md':
-      case 'json':
-      case 'csv':
-        return 'text';
       case 'pdf':
       case 'png':
       case 'jpg':
       case 'jpeg':
         return 'image';
-      default:
+      case 'txt':
+      case 'md':
+      case 'json':
+      case 'csv':
         return 'text';
+      default:
+        return 'text';  //其他能直接读取的都默认为text文件就行
     }
   }
 
@@ -99,7 +100,7 @@ export class FileService {
 
     try {
       switch (classifier) {
-        case 'office': 
+        case 'office':
           return await this.parseOfficeFile(filePath);
         case 'text':
           return await this.parseTextualFile(filePath, ext);
@@ -120,6 +121,7 @@ export class FileService {
     try {
       // 添加类型断言确保Buffer类型
       const fileBuffer = fs.readFileSync(filePath) as Buffer;
+      const officeParser = require('officeparser');
 
       // 调用officeParser核心方法
       const content = await officeParser.parseOfficeAsync(
@@ -157,19 +159,37 @@ export class FileService {
     return processor(content);
   }
 
-  private async parseTextualFile(filePath: string, ext: string) {
-    try {
-      const loader = new TextLoader(filePath);
-      const docs = await loader.load();
-      return docs.map(doc => doc.pageContent).join('\n')
+  // private async parseTextualFile(filePath: string, ext: string) {
+  //   try {
+  //     const loader = new TextLoader(filePath);
+  //     const docs = await loader.load();
+  //     return docs.map(doc => doc.pageContent).join('\n')
 
+  //   } catch (error) {
+  //     throw new Error(`Text file parsing failed: ${error.message}`);
+  //   }
+  // }
+
+  private parseTextualFile(filePath: string, ext: string) {
+    try {
+      // 读取文件为Buffer
+      const buffer = fs.readFileSync(filePath);
+      
+      // 尝试UTF-8解码
+      let content = buffer.toString('utf-8');
+      
+      // 检查乱码
+      if (/�/.test(content)) {
+        // 使用iconv-lite解码为GBK
+        const iconv = require('iconv-lite');
+        content = iconv.decode(buffer, 'gbk');
+      }
+      
+      return content;
     } catch (error) {
-      throw new Error(`Text file parsing failed: ${error.message}`);
+      throw new Error(`文件解析失败: ${error.message}`);
     }
   }
-
-
-
 
   private async parseWithOCR(filePath: string) {
 
@@ -180,8 +200,8 @@ export class FileService {
       const isPDF = fileType === 'pdf';
       if (isPDF) {
         // 尝试直接提取PDF文本
-          const pdfText = await this.parseOfficeFile(filePath)
-          if (pdfText.trim().length > 0) return pdfText;
+        const pdfText = await this.parseOfficeFile(filePath)
+        if (pdfText.trim().length > 0) return pdfText;
       }
 
       // 提前初始化OCR Worker
@@ -400,6 +420,7 @@ export class FileService {
         //".json": (path) => new JSONLoader(path, "/texts"),
         //".jsonl": (path) => new JSONLinesLoader(path, "/html"),
         ".txt": (path) => new TextLoader(path),
+        ".py": (path) => new TextLoader(path),
         ".docx": (path) => new DocxLoader(path),
         ".pdf": (path) => new PDFLoader(path),
         //".csv": (path) => new CSVLoader(path, "text"),
@@ -433,5 +454,6 @@ export class FileService {
   async deleteFile(fileName) {
     const directoryPath = './fileUpload';
     fs.rmSync(`${directoryPath}/${fileName}`);
+    this.refactorVectorStore();
   }
 }

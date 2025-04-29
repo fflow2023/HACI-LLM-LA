@@ -17,7 +17,7 @@
         <tr>
           <th>ID</th>
           <th>用户名</th>
-          <th>邮箱</th>
+          <th>姓名</th>
           <th>角色</th>
           <th>注册时间</th>
           <th>操作</th>
@@ -27,7 +27,7 @@
         <tr v-for="user in users" :key="user.id">
           <td>{{ user.id }}</td>
           <td>{{ user.username }}</td>
-          <td>{{ user.email }}</td>
+          <td>{{ user.name }}</td>
           <td :class="user.role">{{ user.role }}</td>
           <td>{{ formatDate(user.created_at) }}</td>
           <td class="actions">

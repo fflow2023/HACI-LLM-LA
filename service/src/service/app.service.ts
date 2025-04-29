@@ -33,6 +33,10 @@ async executeSQL(sql: string): Promise<any> {
     const res=new ChatglmService
     return res.chatfile(body)
   }
+  async chatfileContent(body) {
+    const res=new ChatglmService
+    return res.chatfileContent(body)
+  }
 
 
  //OpenAI交互
@@ -48,10 +52,6 @@ async executeSQL(sql: string): Promise<any> {
     return res.chatOpenAI(body)
   }
   //文档问答-只获取内容
-    async chatfileContent(body) {
-      const res=new ChatopenaiService
-      return res.chatfileContent(body)
-    }
 
   //文件相关处理
      //文件向量化
@@ -61,6 +61,7 @@ async executeSQL(sql: string): Promise<any> {
   }
     //获取文件列表
   async getFileList() {
+    
     const res=new FileService
     return res.getFileList()
   }

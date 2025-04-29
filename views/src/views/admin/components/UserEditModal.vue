@@ -16,8 +16,8 @@
               </div>
               
               <div class="form-group">
-                <label>邮箱</label>
-                <input v-model="form.email" required>
+                <label>姓名</label>
+                <input v-model="form.name" required>
               </div>
   
               <div class="form-group">
@@ -61,7 +61,7 @@
   if (user) {
     form.value = {
       username: user.username,
-      email: user.email,
+      name: user.name,
       role: user.role as 'ADMIN' | 'USER'
     }
   }
@@ -70,7 +70,7 @@
 
   const form = ref({
     username: '',
-    email: '',
+    name: '',
     role: 'USER' as 'ADMIN' | 'USER'
   })
   
@@ -82,7 +82,7 @@
     if (user) {
       form.value = {
         username: user.username,
-        email: user.email,
+        name: user.name,
         role: user.role
       }
     }

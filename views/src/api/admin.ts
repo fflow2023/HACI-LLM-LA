@@ -2,7 +2,7 @@
 export interface User {
     id: number
     username: string
-    email: string
+    name: string
     role: 'ADMIN' | 'USER' 
     created_at: string
 }
@@ -36,7 +36,7 @@ async function executeSQL(sql: string): Promise<{ data: any; error?: string }> {
 }
 // 获取用户列表
 export async function fetchUsers(): Promise<{ data: User[]; error?: string }> {
-    const result = await executeSQL("SELECT id, username, email, role, created_at FROM users")
+    const result = await executeSQL("SELECT id, username, name, role, created_at FROM users")
     return {
         data: result.data as User[],
         error: result.error
@@ -55,7 +55,7 @@ export async function fetchUserCount(): Promise<{ data: number; error?: string }
 
 export async function updateUser(
     userId: number, 
-    updateData: { username: string; email: string; role: string }
+    updateData: { username: string; name: string; role: string }
 ): Promise<{ data?: User; error?: string }> {
     // 参数校验
     if (!['ADMIN', 'USER'].includes(updateData.role)) {
@@ -66,11 +66,11 @@ export async function updateUser(
         UPDATE users
         SET 
             username = '${updateData.username.replace(/'/g, "''")}', 
-            email = '${updateData.email.replace(/'/g, "''")}', 
+            name = '${updateData.name.replace(/'/g, "''")}', 
             role = '${updateData.role}'
         WHERE id = ${userId};
         
-        SELECT id, username, email, role, created_at 
+        SELECT id, username, name, role, created_at 
         FROM users 
         WHERE id = ${userId};
     `

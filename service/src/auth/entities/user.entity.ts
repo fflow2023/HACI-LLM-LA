@@ -13,18 +13,18 @@ export class User {
   @Column({ 
     type: 'varchar',
     unique: true,
-    length: 30,
-    nullable: false, 
-    comment: '登录用户名' 
+    length: 9, 
+    nullable: false,
+    comment: '学号' 
   })
   username: string;
 
   @Column({ 
     type: 'varchar',
-    unique: false,
     length: 30,
-    comment: '姓名' ,
-    default: null,
+    comment: '姓名',
+    nullable: false, // 改为必填字段
+    default: null,    // 删除默认值
   })
   name: string;
 

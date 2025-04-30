@@ -4,13 +4,23 @@
             <h1 class="register-title">注册新账户</h1>
 
             <form @submit.prevent="handleSubmit" class="register-form">
-                <!-- 用户名输入 -->
+                <!-- 添加学号输入 -->
                 <div class="form-group">
-                    <label class="input-label">用户名</label>
-                    <input v-model="form.username" type="text" required placeholder="3-16位字符" class="form-input"
-                        @input="validateUsername">
+                    <label class="input-label">学号</label>
+                    <input v-model="form.username" type="text" required placeholder="请输入9位学号" class="form-input"
+                        @input="validateUsername" maxlength="9">
                     <div class="input-hint" :class="{ 'text-error': errors.username }">
-                        {{ errors.username || '用户名需唯一且不含特殊字符' }}
+                        {{ errors.username || '学号为9位数字' }}
+                    </div>
+                </div>
+
+                <!-- 添加姓名输入 -->
+                <div class="form-group">
+                    <label class="input-label">姓名</label>
+                    <input v-model="form.name" type="text" required placeholder="请输入真实姓名" class="form-input"
+                        @input="validateName">
+                    <div class="input-hint" :class="{ 'text-error': errors.name }">
+                        {{ errors.name || '请输入中文姓名' }}
                     </div>
                 </div>
 
@@ -65,6 +75,7 @@ const authStore = useAuthStore()
 // 表单数据
 const form = ref({
     username: '',
+    name: '',
     password: '',
     confirmPassword: ''
 })
@@ -72,6 +83,7 @@ const form = ref({
 // 验证状态
 const errors = ref({
     username: '',
+    name: '',
     password: '',
     confirmPassword: ''
 })
@@ -92,9 +104,11 @@ const hasValidLength = computed(() =>
 const formValid = computed(() => {
     return (
         form.value.username &&
+        form.value.name &&
         form.value.password &&
         form.value.confirmPassword &&
         !errors.value.username &&
+        !errors.value.name &&
         !errors.value.password &&
         !errors.value.confirmPassword &&
         hasLowerCase.value &&
@@ -105,11 +119,20 @@ const formValid = computed(() => {
 })
 
 // 验证方法
-const validateUsername = () => {
-    errors.value.username =
-        (form.value.username.length >= 3 && form.value.username.length <= 16)
+const validateName = () => {
+    const name = form.value.name
+    errors.value.name =
+    name.length >= 2 && name.length <= 10
             ? ''
-            : '用户名必须为3-16位字符'
+            : '姓名需要2-10位字符'
+}
+
+// 修改学号验证
+const validateUsername = () => {
+    const isValid = /^\d{9}$/.test(form.value.username)
+    errors.value.username = isValid
+        ? ''
+        : '学号必须为9位数字'
 }
 
 const validatePassword = () => {
@@ -142,6 +165,7 @@ const handleSubmit = async () => {
         isSubmitting.value = true
         await authStore.register({
             username: form.value.username,
+            name: form.value.name,
             password: form.value.password
         })
 

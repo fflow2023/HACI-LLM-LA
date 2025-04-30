@@ -32,11 +32,12 @@ export class AuthService {
     // 创建用户
     const user = this.userRepository.create({
       username: registerDto.username,
+      name: registerDto.name,
       password: hashedPassword,
     });
 
     const savedUser = await this.userRepository.save(user);
-    return { id: savedUser.id, username: savedUser.username, role: savedUser.role, createdAt: savedUser.createdAt };
+    return { id: savedUser.id, username: savedUser.username, name: savedUser.name, role: savedUser.role, createdAt: savedUser.createdAt };
   }
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {

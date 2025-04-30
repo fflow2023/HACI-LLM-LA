@@ -29,7 +29,6 @@ function http<T = any>(
       return res.data
 
     if (res.data.status === 'Unauthorized') {
-      authStore.removeToken()
       window.location.reload()
     }
 

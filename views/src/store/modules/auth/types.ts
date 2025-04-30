@@ -5,6 +5,7 @@ export interface LoginParams {
 
 export interface RegisterParams {
   username: string
+  name: string
   password: string
   confirmPassword?: string // 前端二次验证密码字段
 }

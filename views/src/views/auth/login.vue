@@ -6,7 +6,7 @@
       <form @submit.prevent="handleSubmit" class="login-form">
         <!-- 用户名输入 -->
         <div class="form-group">
-          <label class="input-label">用户名</label>
+          <label class="input-label">学号</label>
           <input v-model="username" type="text" required placeholder="请输入用户名" class="form-input"
             :class="{ 'input-error': errors.username }" @input="validateUsername">
           <div v-if="errors.username" class="error-message">{{ errors.username }}</div>

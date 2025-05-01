@@ -33,9 +33,8 @@ export class AppController {
   ) { }
 
 
-  //sql查询api  (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
-  @Public()
-  // @Roles('ADMIN') 
+  //sql查询api
+  @Roles('ADMIN') 
   @Post('sql')
   async runSQL(@Body() body: { sql: string }) {
     return this.appService.executeSQL(body.sql);

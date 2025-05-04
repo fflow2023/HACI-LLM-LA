@@ -78,7 +78,22 @@ function exportData(): void {
   const date = getCurrentDate()
   const data: string = localStorage.getItem('chatStorage') || '{}'
   const parsedData = JSON.parse(data)
-  
+
+  // 新增：从authStore获取用户信息
+  const authStore = useAuthStore()
+
+  // 添加用户信息到导出数据（不修改原始结构）
+  const exportData = {
+    ...parsedData,
+    meta: { // 在顶层添加元数据
+      exportTime: new Date().toISOString(),
+      userInfo: {
+        username: authStore.user?.username || '未登录用户',
+        name: authStore.user?.name || '匿名用户'
+      }
+    }
+  }
+
   // 添加性格类型信息到导出数据
   const characterInfo = {
     strict: '严厉型（教师角色）',
@@ -86,7 +101,7 @@ function exportData(): void {
     topStudent: '学霸领学型（同学角色）',
     strugglingStudent: '学渣共同进步型（同学角色）'
   }
-  
+
   // 为每个历史记录添加性格类型描述
   if (parsedData.history) {
     parsedData.history = parsedData.history.map((item: any) => ({
@@ -94,7 +109,7 @@ function exportData(): void {
       characterDescription: characterInfo[item.character as keyof typeof characterInfo] || '未知性格类型'
     }))
   }
-  
+
   // 为每个聊天记录添加性格类型信息
   if (parsedData.chat) {
     parsedData.chat = parsedData.chat.map((chatItem: any) => {
@@ -112,8 +127,8 @@ function exportData(): void {
       }
     })
   }
-  
-  const jsonString: string = JSON.stringify(parsedData, null, 2)
+
+  const jsonString: string = JSON.stringify(exportData, null, 2)
   const blob: Blob = new Blob([jsonString], { type: 'application/json' })
   const url: string = URL.createObjectURL(blob)
   const link: HTMLAnchorElement = document.createElement('a')
@@ -199,10 +214,7 @@ const handleLogout = () => {
           {{ $t('common.save') }}
         </NButton>
       </div> -->
-      <div
-        class="flex items-center space-x-4"
-        :class="isMobile && 'items-start'"
-      >
+      <div class="flex items-center space-x-4" :class="isMobile && 'items-start'">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.chatHistory') }}</span>
 
         <div class="flex flex-wrap items-center gap-4">
@@ -267,11 +279,8 @@ const handleLogout = () => {
           {{ $t('common.reset') }}
         </NButton>
       </div> -->
-         <!-- 新增退出登录按钮 -->
-         <div
-        class="flex items-center space-x-4"
-        :class="isMobile && 'items-start'"
-      >
+      <!-- 新增退出登录按钮 -->
+      <div class="flex items-center space-x-4" :class="isMobile && 'items-start'">
         <span class="flex-shrink-0 w-[100px]">{{ $t('用户状态') }}</span>
         <NPopconfirm placement="bottom" @positive-click="handleLogout">
           <template #trigger>

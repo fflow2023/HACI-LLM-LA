@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { getLocalState, setLocalState } from './helper'
 import { router } from '@/router'
 import { CharacterType } from '@/templates/characterPrompts'
+import { useAuthStore } from '../auth'
 
 const characterInfo = {
   strict: '严厉型（教师角色）',
@@ -36,16 +37,35 @@ export const useChatStore = defineStore('chat-store', {
       this.recordState()
     },
 
+    // 修改 addHistory 方法
     addHistory(history: Chat.History, chatData: Chat.Chat[] = []) {
+      const authStore = useAuthStore()
+      
       const character = history.character as CharacterType || 'strict'
       const characterDescription = characterInfo[character] || '未知性格类型'
       
+      // 添加用户信息到历史记录
       this.history.unshift({
         ...history,
         character,
-        characterDescription
+        characterDescription,
+        creator: {
+          username: authStore.user?.username || '未知用户',
+          name: authStore.user?.name || '未命名'
+        }
       })
       
+      // 更新元数据
+      this.meta = {
+        exportDate: new Date().toISOString(),
+        userInfo: {
+          username: authStore.user?.username || '未知用户',
+          name: authStore.user?.name || '未命名',
+          role: authStore.user?.role || 'USER'
+        }
+      }
+
+      // 保持原有逻辑
       this.chat.unshift({ 
         uuid: history.uuid, 
         data: chatData,
@@ -55,9 +75,14 @@ export const useChatStore = defineStore('chat-store', {
       
       this.active = history.uuid
       this.reloadRoute(history.uuid)
+      this.recordState()
     },
 
-    updateHistory(uuid: number, edit: Partial<Chat.History>) {
+
+     // 修改 updateHistory 方法
+     updateHistory(uuid: number, edit: Partial<Chat.History>) {
+      const authStore = useAuthStore()
+      
       const index = this.history.findIndex(item => item.uuid === uuid)
       if (index !== -1) {
         const character = edit.character as CharacterType || this.history[index].character
@@ -67,7 +92,22 @@ export const useChatStore = defineStore('chat-store', {
           ...this.history[index], 
           ...edit,
           character,
-          characterDescription
+          characterDescription,
+          // 更新创建者信息
+          creator: {
+            username: authStore.user?.username || this.history[index].creator?.username || '未知用户',
+            name: authStore.user?.name || this.history[index].creator?.name || '未命名'
+          }
+        }
+        
+        // 更新元数据
+        this.meta = {
+          exportDate: new Date().toISOString(),
+          userInfo: {
+            username: authStore.user?.username || '未知用户',
+            name: authStore.user?.name || '未命名',
+            role: authStore.user?.role || 'USER'
+          }
         }
         
         // 同时更新对应的聊天记录
@@ -244,7 +284,17 @@ export const useChatStore = defineStore('chat-store', {
       await router.push({ name: 'Chat', params: { uuid } })
     },
 
-    recordState() {
+     // 修改记录状态方法
+     recordState() {
+      // 在保存前更新元数据
+      this.meta = {
+        exportDate: new Date().toISOString(),
+        userInfo: {
+          username: useAuthStore().user?.username || '未知用户',
+          name: useAuthStore().user?.name || '未命名',
+          role: useAuthStore().user?.role || 'USER'
+        }
+      }
       setLocalState(this.$state)
     },
   },

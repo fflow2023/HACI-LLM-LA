@@ -9,22 +9,24 @@ interface RequestConfig {
 }
 
 // 增强类型定义
-interface UserInfo {
+export interface UserInfo {
   username: string
-  role: 'USER' | 'ADMIN' // 严格使用大写枚举
+  name: string    // 新增姓名字段
+  role: 'USER' | 'ADMIN'
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('access_token') || null,
-    user: localStorage.getItem('userRole') || null,
+    user: JSON.parse(localStorage.getItem('userInfo') || 'null') as UserInfo | null
   }),
 
   actions: {    
     initAuthState() {
       if (typeof window !== 'undefined') { // 安全判断
-        this.token = localStorage.getItem('access_token') || '',
-        this.user = localStorage.getItem('userRole') || 'USER'
+        this.token = localStorage.getItem('access_token') || ''
+        const userInfo = localStorage.getItem('userInfo')
+        this.user = userInfo ? JSON.parse(userInfo) : null
       }
     },
     
@@ -55,15 +57,16 @@ export const useAuthStore = defineStore('auth', {
 
         console.log('[AuthStore] 原始响应数据:', JSON.stringify(data, null, 2))
 
-        // 严格校验数据结构
-        if (!data.access_token || !data.user?.username || !data.user?.role) {
-          throw new Error('无效的响应结构：缺少必要字段')
-        }
+       // 增强校验逻辑
+       if (!data.access_token || !data.user?.username || !data.user?.role || !data.user?.name) {
+        throw new Error('无效的响应结构：缺少必要字段')
+      }
 
-        // 关键修复：标准化角色值为大写
-        const normalizedUser = {
+        // 构造完整用户信息对象
+        const normalizedUser: UserInfo = {
           username: data.user.username,
-          role: data.user.role.toUpperCase() as UserInfo['role'] // 强制转换类型
+          name: data.user.name,      // 新增
+          role: data.user.role.toUpperCase() as UserInfo['role']//强制转换大写
         }
 
         // ✅ 新增类型校验
@@ -73,9 +76,9 @@ export const useAuthStore = defineStore('auth', {
 
         // 更新状态
         this.token = data.access_token
-        this.user = normalizedUser.role // 存储标准化后的用户数据
+        this.user = normalizedUser  // 存储完整用户信息
         localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('userRole', normalizedUser.role)
+        localStorage.setItem('userInfo', JSON.stringify(normalizedUser))  // 改为存储完整信息
 
         // 调试日志
         console.log('[AuthStore] 用户信息已更新:', this.user)
@@ -144,12 +147,12 @@ export const useAuthStore = defineStore('auth', {
       this.token = ''
       this.user = null
       localStorage.removeItem('access_token')
-      localStorage.removeItem('userRole') // 同步清理
+      localStorage.removeItem('userInfo')  // 同步修改清理项
     }
   },
 
   getters: {
     isAuthenticated: (state) => !!state.token,
-    isAdmin: (state) => state.user === 'ADMIN' // 精确匹配
+    isAdmin: (state) => state.user?.role === 'ADMIN'
   }
 })

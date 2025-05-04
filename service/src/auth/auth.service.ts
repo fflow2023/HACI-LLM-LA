@@ -43,7 +43,7 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userRepository.findOne({
       where: { username: loginDto.username },
-      select: ['id', 'username', 'password', 'role'] // 新增role字段
+      select: ['id', 'username', 'password', 'role', 'name'] // 新增role和name字段
     });
 
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
@@ -60,6 +60,7 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
       user: {  
         username: user.username,
+        name:user.name,
         role: user.role.toUpperCase() as UserRole // 强制转为大写
       }
   }

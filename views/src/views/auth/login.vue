@@ -76,7 +76,7 @@ const formValid = computed(() => {
 // 验证逻辑
 const validateUsername = () => {
   errors.value.username =
-    username.value.length >= 9 ? '' : '学号至少需要9个字符'
+    username.value.length >= 3 ? '' : '学号至少需要3个字符'
 }
 
 const validatePassword = () => {

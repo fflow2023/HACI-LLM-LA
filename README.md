@@ -117,7 +117,7 @@
   JWT_EXPIRES_IN=3600s
   ```
 
-- 手动创建mysql数据库
+- 手动创建mysql数据库（目前新添了姓名字段，之前的存入的数据需要统一清空重新存入）
   ```shell
   mysql -h localhost -u root -p
   CREATE DATABASE llm_service 
@@ -140,11 +140,13 @@
   #插入admin
   INSERT INTO users (
   username,
+  name,
   password,
   role,
   created_at
   ) VALUES (
   'admin1',
+  '管理员',
   '替换为你的实际哈希值', 
   'ADMIN',
   NOW()

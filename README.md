@@ -70,8 +70,8 @@
   # VITE_SILICONFLOW_MODEL="Qwen/QwQ-32B" 
 
   # 设置views的地址，启动为局域网时，需修改为实际地址
-  VITE_VIEWS_ADDRESS="http://127.0.0.1:1002"
-  # VITE_VIEWS_ADDRESS="http://10.108.113.53:1002"
+  VITE_VIEWS_ADDRESS="http://127.0.0.1:2493"
+  # VITE_VIEWS_ADDRESS="http://10.108.113.53:2493"
   
   # 设置service的地址，启动为局域网时，需修改为实际地址
   VITE_SERVICE_ADDRESS="http://127.0.0.1:3000"
@@ -81,7 +81,7 @@
   ```shell
   npm run dev
   ```
-- 打开前端地址：http://localhost:1002/
+- 打开前端地址：http://localhost:2493/
 - 退出views目录，进入service目录，安装依赖
   ```shell
   cd ../service
@@ -103,7 +103,7 @@
   COHERE_API_KEY=WrJWnnCOXit1EiZ3eGvIoeqK3tPvnWyOp55oeSxW
 
   # 配置允许的域名/地址（用英文逗号分隔）
-  ALLOWED_ORIGINS=http://localhost:1002,http://172.22.80.1:1002
+  ALLOWED_ORIGINS=http://localhost:2493,http://172.22.80.1:2493
 
   # Database
   DB_HOST=localhost

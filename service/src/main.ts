@@ -41,9 +41,9 @@ async function bootstrap() {
   // // 跨域配置
   // app.enableCors({
   //   origin: [
-  //     'http://localhost:1002', // 前端实际运行端口
-  //     'http://172.22.80.1:1002',
-  //     'http://172.30.217.12:1002'
+  //     'http://localhost:2493', // 前端实际运行端口
+  //     'http://172.22.80.1:2493',
+  //     'http://172.30.217.12:2493'
   //   ],
   //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   //   allowedHeaders: ['Content-Type', 'Authorization'],

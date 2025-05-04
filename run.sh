@@ -74,4 +74,4 @@ echo -e "  Python后端: tail -f $LOG_DIR/Python后端.log"
 echo -e "  views服务: tail -f $LOG_DIR/views服务.log"
 echo -e "\n🛑 停止所有服务: bash ./stop.sh"
 
-echo -e "\n快速进入：http://localhost:1002/"
+echo -e "\n快速进入：http://localhost:2493/"

@@ -1,13 +1,15 @@
+<!-- 暂时规定，username是学号， name是姓名 -->
+
 <template>
   <div class="login-container">
     <div class="login-card">
       <h1 class="login-title">欢迎登录</h1>
 
       <form @submit.prevent="handleSubmit" class="login-form">
-        <!-- 用户名输入 -->
+        <!-- 学号输入 -->
         <div class="form-group">
           <label class="input-label">学号</label>
-          <input v-model="username" type="text" required placeholder="请输入用户名" class="form-input"
+          <input v-model="username" type="text" required placeholder="请输入学号" class="form-input"
             :class="{ 'input-error': errors.username }" @input="validateUsername">
           <div v-if="errors.username" class="error-message">{{ errors.username }}</div>
         </div>
@@ -74,7 +76,7 @@ const formValid = computed(() => {
 // 验证逻辑
 const validateUsername = () => {
   errors.value.username =
-    username.value.length >= 3 ? '' : '用户名至少需要3个字符'
+    username.value.length >= 9 ? '' : '学号至少需要9个字符'
 }
 
 const validatePassword = () => {

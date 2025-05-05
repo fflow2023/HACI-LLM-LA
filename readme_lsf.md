@@ -175,3 +175,31 @@
 - 支持性格类型的更新和同步。
 
 
+// ... existing code ...
+import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect, NTooltip, NAffix, NDropdown } from 'naive-ui'
+// ... existing code ...
+          <div class="flex items-center justify-between p-4 border-b dark:border-neutral-800">
+            <div class="flex items-center space-x-4">
+              <!-- 原NSelect性格选择下拉菜单替换为Affix铆钉按钮 -->
+              <NAffix :top="24" :right="24">
+                <NDropdown :options="characterOptions.map(opt => ({
+                  label: opt.label,
+                  key: opt.value
+                }))"
+                  @select="handleCharacterChange"
+                >
+                  <NButton type="primary" size="small">
+                    选择性格
+                  </NButton>
+                </NDropdown>
+              </NAffix>
+            </div>
+          </div>
+// ... existing code ...
+
+5.5修改：
+已将性格选择的下拉菜单替换为 Naive UI 的 Affix（铆钉）组件，按钮悬浮在页面右上角，不再占用原有布局空间。点击“选择性格”按钮会弹出下拉菜单，供用户选择性格类型，交互体验与截图类似。
+如需进一步美化样式或调整悬浮位置，可继续告知！
+遍历这个项目的代码，前端对话选择性格这里改一下，要求必须要选择性格后才能进行对话
+
+已完成修改：现在用户必须先选择性格模板后，才能输入问题和点击发送按钮。未选择性格时，输入框会提示“请先选择性格模板后再输入问题”，发送按钮也会被禁用，确保流程规范。

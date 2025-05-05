@@ -24,6 +24,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
+import { RateLimitInterceptor } from '../interceptors/rate-limit.interceptor';
 
 
 @UseGuards(JwtAuthGuard)
@@ -168,22 +169,24 @@ export class AppController {
     return await this.appService.chatfileContent(body);
   }
 
-  // @Post('chat/record')
-  // @ApiBody({ description: '存储聊天记录', type: Object })
-  // async saveChatRecord(
-  //   @CurrentUser() user: User,
-  //   @Body() body: {
-  //     question: string
-  //     answer: string
-  //     characterUsed: string
-  //   }
-  // ) {
-  //   return this.appService.logChatRecord({
-  //     username: user.username,
-  //     name: user.name,
-  //     ...body
-  //   });
-  // }
+  //存储聊天记录
+  @UseInterceptors(RateLimitInterceptor) // ✅ 应用拦截器
+  @Post('chat/record')
+  @ApiBody({ description: '存储聊天记录', type: Object })
+  async saveChatRecord(
+    @CurrentUser() user: User,
+    @Body() body: {
+      question: string
+      answer: string
+      characterUsed: string
+    }
+  ) {
+    return this.appService.logChatRecord({
+      username: user.username,
+      name: user.name,
+      ...body
+    });
+  }
 
   // @Post('chatfileOpenai')
   // @ApiBody({

@@ -12,6 +12,7 @@ declare namespace Chat {
 
 
 	interface Chat {
+		response?: string // ✅ 添加可选属性
 		dateTime: string
 		text: string
 		inversion?: boolean

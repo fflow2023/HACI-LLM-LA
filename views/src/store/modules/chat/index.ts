@@ -3,6 +3,7 @@ import { getLocalState, setLocalState } from './helper'
 import { router } from '@/router'
 import { CharacterType } from '@/templates/characterPrompts'
 import { useAuthStore } from '../auth'
+import axios from '@/utils/request/axios'
 
 const characterInfo = {
   strict: '严厉型（教师角色）',
@@ -12,7 +13,15 @@ const characterInfo = {
 }
 
 export const useChatStore = defineStore('chat-store', {
-  state: (): Chat.ChatState => getLocalState(),
+  state: (): Chat.ChatState & { 
+    isSubmitting: boolean;
+    submitTimer: NodeJS.Timeout | null;
+  } => ({
+    // 合并本地持久化状态和运行时状态
+    ...getLocalState(),
+    isSubmitting: false,
+    submitTimer: null
+  }),
 
   getters: {
     getChatHistoryByCurrentActive(state: Chat.ChatState) {
@@ -29,6 +38,10 @@ export const useChatStore = defineStore('chat-store', {
         return state.chat.find(item => item.uuid === state.active)?.data ?? []
       }
     },
+    currentCharacter(state): string {
+      const activeHistory = state.history.find(h => h.uuid === state.active)
+      return activeHistory?.character || 'strict'
+    },
   },
 
   actions: {
@@ -40,10 +53,10 @@ export const useChatStore = defineStore('chat-store', {
     // 修改 addHistory 方法
     addHistory(history: Chat.History, chatData: Chat.Chat[] = []) {
       const authStore = useAuthStore()
-      
+
       const character = history.character as CharacterType || 'strict'
       const characterDescription = characterInfo[character] || '未知性格类型'
-      
+
       // 添加用户信息到历史记录
       this.history.unshift({
         ...history,
@@ -54,7 +67,7 @@ export const useChatStore = defineStore('chat-store', {
           name: authStore.user?.name || '未命名'
         }
       })
-      
+
       // 更新元数据
       this.meta = {
         exportDate: new Date().toISOString(),
@@ -66,30 +79,30 @@ export const useChatStore = defineStore('chat-store', {
       }
 
       // 保持原有逻辑
-      this.chat.unshift({ 
-        uuid: history.uuid, 
+      this.chat.unshift({
+        uuid: history.uuid,
         data: chatData,
         character,
         characterDescription
       })
-      
+
       this.active = history.uuid
       this.reloadRoute(history.uuid)
       this.recordState()
     },
 
 
-     // 修改 updateHistory 方法
-     updateHistory(uuid: number, edit: Partial<Chat.History>) {
+    // 修改 updateHistory 方法
+    updateHistory(uuid: number, edit: Partial<Chat.History>) {
       const authStore = useAuthStore()
-      
+
       const index = this.history.findIndex(item => item.uuid === uuid)
       if (index !== -1) {
         const character = edit.character as CharacterType || this.history[index].character
         const characterDescription = characterInfo[character] || '未知性格类型'
-        
-        this.history[index] = { 
-          ...this.history[index], 
+
+        this.history[index] = {
+          ...this.history[index],
           ...edit,
           character,
           characterDescription,
@@ -99,7 +112,7 @@ export const useChatStore = defineStore('chat-store', {
             name: authStore.user?.name || this.history[index].creator?.name || '未命名'
           }
         }
-        
+
         // 更新元数据
         this.meta = {
           exportDate: new Date().toISOString(),
@@ -109,7 +122,7 @@ export const useChatStore = defineStore('chat-store', {
             role: authStore.user?.role || 'USER'
           }
         }
-        
+
         // 同时更新对应的聊天记录
         const chatIndex = this.chat.findIndex(item => item.uuid === uuid)
         if (chatIndex !== -1) {
@@ -119,7 +132,7 @@ export const useChatStore = defineStore('chat-store', {
             characterDescription
           }
         }
-        
+
         this.recordState()
       }
     },
@@ -173,28 +186,29 @@ export const useChatStore = defineStore('chat-store', {
       return null
     },
 
-    addChatByUuid(uuid: number, chat: Chat.Chat) {
+    async addChatByUuid(uuid: number, chat: Chat.Chat) {
+      const authStore = useAuthStore()
       if (!uuid || uuid === 0) {
         if (this.history.length === 0) {
           const uuid = Date.now()
           const character = 'strict' as CharacterType
           const characterDescription = characterInfo[character]
-          
-          this.history.push({ 
-            uuid, 
-            title: chat.text, 
+
+          this.history.push({
+            uuid,
+            title: chat.text,
             isEdit: false,
             character,
             characterDescription
           })
-          
-          this.chat.push({ 
-            uuid, 
+
+          this.chat.push({
+            uuid,
             data: [chat],
             character,
             characterDescription
           })
-          
+
           this.active = uuid
           this.recordState()
         }
@@ -212,6 +226,32 @@ export const useChatStore = defineStore('chat-store', {
         if (this.history[index].title === 'New Chat')
           this.history[index].title = chat.text
         this.recordState()
+      }
+
+      // 新增聊天记录保存逻辑（在消息处理完成后调用）
+      try {
+        // ✅ 使用配置好的 axios 实例
+        await axios.post('/chat/record', {
+          question: chat.text,
+          answer: chat.response || '(无回答)', // ✅ 确保传递有效值
+          characterUsed: this.currentCharacter,
+          username: authStore.user?.username,
+          name: authStore.user?.name
+        }, {
+          headers: {
+            'Content-Type': 'application/json', // 明确指定内容类型
+            // ✅ 通过拦截器自动携带 Token 或手动添加（根据项目配置）
+            Authorization: `Bearer ${authStore.token}`
+          }
+        })
+      } catch (error: any) {
+        console.error('[ChatStore] 聊天记录保存失败:', {
+          error: error.response?.data || error.message,
+          payload: {
+            question: chat.text,
+            uuid
+          }
+        })
       }
     },
 
@@ -284,8 +324,8 @@ export const useChatStore = defineStore('chat-store', {
       await router.push({ name: 'Chat', params: { uuid } })
     },
 
-     // 修改记录状态方法
-     recordState() {
+    // 修改记录状态方法
+    recordState() {
       // 在保存前更新元数据
       this.meta = {
         exportDate: new Date().toISOString(),

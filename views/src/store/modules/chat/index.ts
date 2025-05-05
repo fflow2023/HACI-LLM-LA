@@ -199,7 +199,9 @@ export const useChatStore = defineStore('chat-store', {
 
       try {
         const authStore = useAuthStore()
-        await axios.post('/chat/record', {
+        const url = `${import.meta.env.VITE_VIEWS_ADDRESS}/api/chat/record`;
+
+        await axios.post(url, {
           question: chat.text,
           answer: chat.response,
           characterUsed: this.currentCharacter,

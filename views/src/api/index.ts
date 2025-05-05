@@ -1,3 +1,5 @@
+//views\src\api\index.ts
+
 import type { AxiosProgressEvent, GenericAbortSignal } from 'axios'
 import { post } from '@/utils/request'
 import { useAuthStore, useSettingStore } from '@/store'

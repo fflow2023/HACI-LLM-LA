@@ -1,15 +1,10 @@
+//views\src\views\admin\modules\FileManagement.vue
 <template>
   <div class="file-management">
     <h2 class="title">知识库文件管理</h2>
     <div class="p-4">
-      <NUpload 
-        :action="api_file_url" 
-        :headers="{ 'naive-info': 'hello!' }"
-        :data="{ 'naive-data': 'cool! naive!' }"
-        @finish="handleUploadSuccess"
-        @error="handleUploadError"
-        :key="uploadKey"
-      >
+      <NUpload :action="api_file_url" :headers="uploadHeaders" :data="{ 'naive-data': 'cool! naive!' }"
+        @finish="handleUploadSuccess" @error="handleUploadError" :key="uploadKey">
         <NButton block>文件上传</NButton>
       </NUpload>
     </div>
@@ -24,7 +19,8 @@
           </template>
           <template v-else>
             <div v-for="(item, index) in dataSources" :key="index">
-              <div class="relative flex items-center gap-3 px-3 py-3 break-all border rounded-md group dark:border-neutral-800 dark:hover:bg-[#24272e] hover:bg-neutral-100">
+              <div
+                class="relative flex items-center gap-3 px-3 py-3 break-all border rounded-md group dark:border-neutral-800 dark:hover:bg-[#24272e] hover:bg-neutral-100">
                 <span>
                   <SvgIcon icon="ri:file-line" />
                 </span>
@@ -32,10 +28,7 @@
                   {{ item }}
                 </div>
                 <div class="absolute z-10 flex visible right-1">
-                  <NPopconfirm 
-                    placement="bottom" 
-                    @positive-click="() => handleDelete(item)"
-                  >
+                  <NPopconfirm placement="bottom" @positive-click="() => handleDelete(item)">
                     <template #trigger>
                       <button class="p-1 hover:text-red-500">
                         <SvgIcon icon="ri:delete-bin-line" />
@@ -54,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { NButton, NUpload, NPopconfirm, NScrollbar, useMessage } from 'naive-ui'
 import type { UploadFileInfo } from 'naive-ui'
 import { SvgIcon } from '@/components/common'
@@ -64,6 +57,9 @@ const api_file_url = import.meta.env.VITE_VIEWS_ADDRESS + '/api/file'
 const message = useMessage()
 const dataSources = ref<string[]>([])
 
+const uploadHeaders = computed(() => ({
+  'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+}))
 // 统一初始化加载
 onMounted(loadFileList)
 
@@ -79,9 +75,9 @@ async function loadFileList() {
 }
 const uploadKey = ref(Date.now())
 // 上传成功处理（新增自动刷新）
-const handleUploadSuccess = async ({ file }: { file: UploadFileInfo }) => {
+const handleUploadSuccess = ({ file }: { file: UploadFileInfo }) => {
   message.success(`${file.name} 上传成功`)
-  await loadFileList() // 上传成功后刷新列表
+  loadFileList()
 }
 
 const handleUploadError = ({ file }: { file: UploadFileInfo }) => {

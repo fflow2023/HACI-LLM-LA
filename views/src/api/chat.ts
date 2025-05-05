@@ -1,3 +1,4 @@
+// views\src\api\chat.ts
 import qs from 'qs'
 import { api, remoteapi } from './api'
 

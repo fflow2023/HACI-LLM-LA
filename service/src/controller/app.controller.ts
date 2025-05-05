@@ -50,7 +50,6 @@ export class AppController {
     }
   }))
 
-
   @Post('file/parse')
   async parseFile(@UploadedFile() file: Express.Multer.File) {
     console.log('api调用:' + 'file/parse');
@@ -84,7 +83,8 @@ export class AppController {
   }
 
   //文件相关处理
-  @Public()  // (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
+  // @Public()
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('file'))
   @Post('file')
   @ApiConsumes('multipart/form-data')
@@ -100,8 +100,9 @@ export class AppController {
     console.log(decodeURIComponent(escape(file.originalname)));
     return await this.appService.refactorVectorStore();
   }
-
-  @Public() // 身份验证？
+  
+  // @Public()
+  @Roles('ADMIN')
   @Get('file/query-list')
   async queryFileList() {
     console.log('api调用:' + 'file 查询文件');
@@ -110,7 +111,8 @@ export class AppController {
     return await this.appService.getFileList()
   }
 
-  @Public()  // (测试阶段忽略身份验证，真实环境下应该通过JWT检验用户token)
+  // @Public()
+  @Roles('ADMIN')
   @Post('file/delete')
   @ApiBody({
     description: '删除文件',
@@ -123,7 +125,7 @@ export class AppController {
   }
 
   //Chatglm相关
-  @Public() // 身份验证？
+  // @Public()
   @Post('chat')
   @ApiBody({
     description: 'Glm对话',
@@ -138,7 +140,7 @@ export class AppController {
     return await this.appService.chat(body);
   }
 
-  @Public() // 身份验证？
+  // @Public()
   @Post('chatfile')
   @ApiBody({
     description: 'Glm文档问答',
@@ -154,7 +156,8 @@ export class AppController {
 
   }
 
-  @Public() // 身份验证？
+  // @Public()
+  
   @Post('chatfileContent')
   @ApiBody({
     description: 'Glm文档问答--只获取文档内容',

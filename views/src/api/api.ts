@@ -1,3 +1,5 @@
+//views\src\api\api.ts
+
 import request from './axios'
 import { getHistoryList } from './tools'
 import axios from 'axios';

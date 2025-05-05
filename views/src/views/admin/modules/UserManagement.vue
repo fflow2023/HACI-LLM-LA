@@ -16,7 +16,7 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>用户名</th>
+          <th>学号</th>
           <th>姓名</th>
           <th>角色</th>
           <th>注册时间</th>
@@ -31,7 +31,7 @@
           <td :class="user.role">{{ user.role }}</td>
           <td>{{ formatDate(user.created_at) }}</td>
           <td class="actions">
-            <button class="view-btn" @click="handleView(user.id)">
+            <button class="view-btn" @click="handleView(user.username)">
               查看记录
             </button>
             <button class="edit-btn" @click="handleEdit(user.id)">
@@ -88,10 +88,12 @@ const formatDate = (timestamp: string | number) => {
 // 初始化加载
 onMounted(loadUsers)
 
-//点击处理函数
-const handleView = (userId: number) => {
-  console.log('查看用户记录:', userId)
-  // 这里可以添加路由跳转逻辑或打开模态框
+import { defineEmits } from 'vue'
+
+const emit = defineEmits(['search-by-username'])
+
+const handleView = (username: string) => {
+  emit('search-by-username', username)
 }
 
 

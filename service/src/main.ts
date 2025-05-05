@@ -12,17 +12,6 @@ dotenv.config({ path: '.env' });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // 全局验证管道（增强配置）
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,         // 自动过滤非DTO字段
-      forbidNonWhitelisted: true, // 抛出非预期字段错误
-      transform: true,          // 自动类型转换
-      disableErrorMessages: process.env.NODE_ENV === 'production' // 生产环境隐藏错误详情
-    })
-  );
-
   const configService = app.get(ConfigService)
 
   //配置前端地址
@@ -38,6 +27,7 @@ async function bootstrap() {
     credentials: true
   })
 
+
   // // 跨域配置
   // app.enableCors({
   //   origin: [
@@ -49,6 +39,16 @@ async function bootstrap() {
   //   allowedHeaders: ['Content-Type', 'Authorization'],
   //   credentials: true
   // });
+
+  // 全局验证管道（增强配置）
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,         // 自动过滤非DTO字段
+      forbidNonWhitelisted: true, // 抛出非预期字段错误
+      transform: true,          // 自动类型转换
+      disableErrorMessages: process.env.NODE_ENV === 'production' // 生产环境隐藏错误详情
+    })
+  );
 
   // Swagger 文档配置（增强安全方案）
   const config = new DocumentBuilder()

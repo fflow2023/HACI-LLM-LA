@@ -1,5 +1,16 @@
 declare namespace Chat {
 
+	// 新增元数据类型
+	interface ExportMeta {
+		exportDate: string
+		userInfo: {
+			username: string
+			name: string
+			role: string
+		}
+	}
+
+
 	interface Chat {
 		dateTime: string
 		text: string
@@ -7,10 +18,12 @@ declare namespace Chat {
 		error?: boolean
 		loading?: boolean
 		conversationOptions?: ConversationRequest | null
-		requestOptions: { 
-			prompt: string; 
+		requestOptions: {
+			prompt: string;
 			options?: ConversationRequest | null;
 			character?: string;
+			// 新增用户信息关联
+			userInfoRef?: string; // 关联meta中的用户信息
 		}
 		// 新增附件类型
 		attachments?: Array<{
@@ -26,18 +39,25 @@ declare namespace Chat {
 		uuid: number
 		character: string
 		characterDescription: string
+		// 新增创建者信息
+		creator?: {
+			username: string
+			name: string
+		  }
 	}
 
 	interface ChatState {
 		active: number | null
 		usingContext: boolean;
 		history: History[]
-		chat: { 
-			uuid: number; 
+		chat: {
+			uuid: number;
 			data: Chat[];
 			character: string;
 			characterDescription: string;
 		}[]
+		// 新增元数据存储
+		meta?: ExportMeta
 	}
 
 	interface ConversationRequest {

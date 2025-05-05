@@ -1,13 +1,15 @@
+//service\src\auth\auth.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { User } from './entities/user.entity';
+import { ChatRecord } from '../auth/entities/record.entity';
 
 @Module({
     imports: [
-      TypeOrmModule.forFeature([User]),
+      TypeOrmModule.forFeature([User, ChatRecord]),
       JwtModule.register({ // 关键修改：完整注册配置
         secret: process.env.JWT_SECRET || 'your-secure-key',
         signOptions: { expiresIn: '2h' }

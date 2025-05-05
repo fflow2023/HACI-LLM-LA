@@ -158,6 +158,8 @@ async function onConversation3() {
   // 获取最新的用户输入（dataSources长度-1是刚添加的用户消息）
   const lastUserMsg = dataSources.value[dataSources.value.length - 1]
   let message = lastUserMsg?.requestOptions?.prompt || ''  //message就是刚刚的版合并消息
+  // ✅ 新增处理：去除"用户问题："前缀
+  message = message.replace(/^用户问题：/, '')
   console.log('[DEBUG]message:\n' + message);
 
   // 更新上下文处理逻辑
@@ -282,6 +284,23 @@ async function onConversation3() {
                 requestOptions: { prompt: message, options: { ...options } },
               },
             )
+
+            // ✅ 新增保存逻辑（在流处理完成后保存）
+            if (lastText.trim() && !lastText.includes('(无回答)')) {
+              chatStore.saveChatToServer(+uuid, {
+                text: message,
+                response: lastText,
+                dateTime: new Date().toISOString(),
+                inversion: false,
+                error: false,
+                loading: false,
+                requestOptions: {
+                  prompt: message,
+                  options: { ...options },
+                  character: currentCharacter.value
+                }
+              })
+            }
           }
         }
         step();

@@ -19,6 +19,7 @@ service.interceptors.request.use(config => {
   }
   console.log('[AXIOS] 当前请求路径:', config.url)
   console.log('[AXIOS] 请求头:', config.headers)
+  console.log('请求体内容:', config.data); 
   return config;
 });
 

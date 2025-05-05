@@ -7,14 +7,32 @@ import { User, UserRole } from './entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { ChatRecord } from '../auth/entities/record.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(ChatRecord) // 新增注入聊天记录仓库
+    private chatRecordRepo: Repository<ChatRecord>,
     private jwtService: JwtService,
   ) { }
+
+   // 新增记录方法
+   async logChatRecord(recordData: {
+    username: string;
+    name: string;
+    question: string;
+    answer: string;
+    characterUsed: string;
+  }) {
+    const record = this.chatRecordRepo.create({
+      ...recordData,
+      createdAt: new Date()
+    });
+    return this.chatRecordRepo.save(record);
+  }
 
   async register(registerDto: RegisterDto) {
     // 检查用户名是否已存在

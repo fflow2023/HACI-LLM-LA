@@ -214,7 +214,6 @@ export const useChatStore = defineStore('chat-store', {
     },
 
     async addChatByUuid(uuid: number, chat: Chat.Chat) {
-      const authStore = useAuthStore()
       if (!uuid || uuid === 0) {
         if (this.history.length === 0) {
           const uuid = Date.now()

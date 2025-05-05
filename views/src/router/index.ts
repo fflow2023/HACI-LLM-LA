@@ -101,7 +101,7 @@ router.beforeEach((to, from, next) => {
   // 角色权限校验（添加类型保护）
   const requiredRoles = to.meta.allowedRoles as string[]
   if (requiredRoles) {
-    const userRole = authStore.user
+    const userRole = authStore.user?.role
     if (!userRole || !requiredRoles.includes(userRole)) {
       return next('/chat')
     }

@@ -22,6 +22,8 @@ import { memoryStorage } from 'multer';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../auth/entities/user.entity';
 
 
 @UseGuards(JwtAuthGuard)
@@ -34,7 +36,7 @@ export class AppController {
 
 
   //sql查询api
-  @Roles('ADMIN') 
+  @Roles('ADMIN')
   @Post('sql')
   async runSQL(@Body() body: { sql: string }) {
     return this.appService.executeSQL(body.sql);
@@ -165,6 +167,23 @@ export class AppController {
 
     return await this.appService.chatfileContent(body);
   }
+
+  // @Post('chat/record')
+  // @ApiBody({ description: '存储聊天记录', type: Object })
+  // async saveChatRecord(
+  //   @CurrentUser() user: User,
+  //   @Body() body: {
+  //     question: string
+  //     answer: string
+  //     characterUsed: string
+  //   }
+  // ) {
+  //   return this.appService.logChatRecord({
+  //     username: user.username,
+  //     name: user.name,
+  //     ...body
+  //   });
+  // }
 
   // @Post('chatfileOpenai')
   // @ApiBody({

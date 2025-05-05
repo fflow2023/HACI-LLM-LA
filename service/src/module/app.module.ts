@@ -34,7 +34,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
       logging: true, // 开启SQL日志
       logger: 'advanced-console',
       autoLoadEntities: true,
-      entities: [join(__dirname, '../auth/entities/*.entity{.ts,.js}')],
+      entities: [join(__dirname, '../**/entities/*.entity{.ts,.js}')],
       synchronize: true,
 
       // MySQL需要以下额外配置

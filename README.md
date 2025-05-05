@@ -125,6 +125,31 @@
   SHOW DATABASES LIKE 'llm_service';
   ```
 
+- 目前新增了chatrecord表用于存储交互记录，如无法自动建表请手动插入
+  ```shell
+  mysql -h localhost -u root -p
+  
+  CREATE TABLE chat_records (
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
+    username VARCHAR(9) NOT NULL COMMENT '学号（外键）',
+    name VARCHAR(30) NOT NULL COMMENT '用户姓名',
+    question TEXT NOT NULL COMMENT '用户提问内容',
+    answer TEXT NOT NULL COMMENT 'AI回答内容',
+    character_used VARCHAR(50) DEFAULT 'strict' COMMENT '使用的教师角色',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    
+    -- 外键约束
+    FOREIGN KEY (username) 
+    REFERENCES users(username)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+    
+    -- 索引优化
+    INDEX idx_username (username),
+    INDEX idx_created_at (created_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  ```
+
 - 启动后端(此时仍然在HACI-LLM-LA/service目录下)
   ```shell
   pnpm start:dev

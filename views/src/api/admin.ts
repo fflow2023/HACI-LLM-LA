@@ -11,17 +11,14 @@ export interface User {
 
 async function executeSQL(sql: string): Promise<{ data: any; error?: string }> {
     try {
-      // ✅ 修正1：拼接完整路径
       const url = `${import.meta.env.VITE_VIEWS_ADDRESS}/api/sql`;
       
-      // ✅ 修正2：使用正确JSON格式
       const response = await axios.post(
         url,
-        { sql }, // 直接传递JSON对象
+        { sql },
         {
           headers: {
-            'Content-Type': 'application/json', // ✅ 修正3：设置正确Content-Type
-            // ✅ 修正4（可选）：添加认证头
+            'Content-Type': 'application/json', 
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           },
           timeout: 10000
@@ -43,7 +40,7 @@ async function executeSQL(sql: string): Promise<{ data: any; error?: string }> {
             errorMessage = '权限不足，需要管理员权限';
             break;
           case 404:
-            errorMessage = '接口不存在，请检查路径配置'; // ✅ 明确提示路径问题
+            errorMessage = '接口不存在，请检查路径配置';
             break;
           default:
             errorMessage = error.response.data?.message || error.message;
@@ -84,6 +81,8 @@ async function executeSQL(sql: string): Promise<{ data: any; error?: string }> {
 //         }
 //     }
 // }
+
+
 // 获取用户列表
 export async function fetchUsers(): Promise<{ data: User[]; error?: string }> {
     const result = await executeSQL("SELECT id, username, name, role, created_at FROM users")
@@ -150,4 +149,165 @@ export async function resetPassword(
         return { error: result.error }
     }
     return {}
+}
+
+
+
+export interface ChatRecord {
+  id: number
+  username: string
+  name: string
+  question: string
+  answer: string
+  characterUsed: string
+  created_at: string
+}
+
+function buildWhereClause(params: {
+  name?: string
+  username?: string
+  characterUsed?: string
+  startTime?: string
+  endTime?: string
+}): string {
+  const conditions: string[] = [];
+
+  if (params.name) {
+      conditions.push(`name = '${params.name.replace(/'/g, "''")}'`);
+  }
+  if (params.username) {
+      conditions.push(`username = '${params.username.replace(/'/g, "''")}'`);
+  }
+  if (params.characterUsed) {
+      conditions.push(`characterUsed = '${params.characterUsed.replace(/'/g, "''")}'`);
+  }
+  if (params.startTime) {
+      conditions.push(`created_at >= '${params.startTime}'`);
+  }
+  if (params.endTime) {
+      conditions.push(`created_at <= '${params.endTime}'`);
+  }
+
+  return conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+}
+
+export async function fetchChatRecords(params: {
+  name?: string
+  username?: string
+  characterUsed?: string
+  startTime?: string
+  endTime?: string
+  page?: number
+  pageSize?: number
+}): Promise<{ data: ChatRecord[]; error?: string }> {
+  const whereClause = buildWhereClause(params);
+  const pagination = params.pageSize ? 
+      `LIMIT ${params.pageSize} OFFSET ${(params.page || 0) * (params.pageSize || 0)}` : '';
+  
+  const sql = `
+      SELECT id, username, name, question, answer, characterUsed, created_at
+      FROM chat_records
+      ${whereClause}
+      ORDER BY created_at DESC
+      ${pagination};
+  `;
+
+  const result = await executeSQL(sql);
+  return {
+      data: result.data as ChatRecord[],
+      error: result.error
+  }
+}
+
+export async function fetchChatRecordCount(params: {
+  name?: string
+  username?: string
+  characterUsed?: string
+  startTime?: string
+  endTime?: string
+}): Promise<{ data: number; error?: string }> {
+  const whereClause = buildWhereClause(params);
+  
+  const sql = `
+      SELECT COUNT(*) as total 
+      FROM chat_records
+      ${whereClause};
+  `;
+
+  const result = await executeSQL(sql);
+  if (result.error) {
+      return { data: 0, error: result.error }
+  }
+  return { 
+      data: Number(result.data?.[0]?.total || 0) 
+  }
+}
+
+export interface CharacterStats {
+  strict: number
+  encouraging: number
+  topStudent: number
+  strugglingStudent: number
+  total: number
+}
+
+export async function getallCharacterStats(): Promise<{ data: CharacterStats; error?: string }> {
+  const sql = `
+    SELECT 
+      COUNT(CASE WHEN characterUsed = 'strict' THEN 1 END) as strict,
+      COUNT(CASE WHEN characterUsed = 'encouraging' THEN 1 END) as encouraging,
+      COUNT(CASE WHEN characterUsed = 'topStudent' THEN 1 END) as topStudent,
+      COUNT(CASE WHEN characterUsed = 'strugglingStudent' THEN 1 END) as strugglingStudent,
+      COUNT(*) as total
+    FROM chat_records
+  `
+
+  const result = await executeSQL(sql)
+  if (result.error) return { data: {} as CharacterStats, error: result.error }
+
+  const data = result.data?.[0] || {}
+  return {
+    data: {
+      strict: Number(data.strict) || 0,
+      encouraging: Number(data.encouraging) || 0,
+      topStudent: Number(data.topStudent) || 0,
+      strugglingStudent: Number(data.strugglingStudent) || 0,
+      total: Number(data.total) || 0
+    }
+  }
+}
+
+export async function getCharacterStats(params: {
+  name?: string
+  username?: string
+  characterUsed?: string
+  startTime?: string
+  endTime?: string
+}): Promise<{ data: CharacterStats; error?: string }> {
+  const whereClause = buildWhereClause(params);
+  
+  const sql = `
+    SELECT 
+      COUNT(CASE WHEN characterUsed = 'strict' THEN 1 END) as strict,
+      COUNT(CASE WHEN characterUsed = 'encouraging' THEN 1 END) as encouraging,
+      COUNT(CASE WHEN characterUsed = 'topStudent' THEN 1 END) as topStudent,
+      COUNT(CASE WHEN characterUsed = 'strugglingStudent' THEN 1 END) as strugglingStudent,
+      COUNT(*) as total
+    FROM chat_records
+    ${whereClause}
+  `
+
+  const result = await executeSQL(sql)
+  if (result.error) return { data: {} as CharacterStats, error: result.error }
+
+  const data = result.data?.[0] || {}
+  return {
+    data: {
+      strict: Number(data.strict) || 0,
+      encouraging: Number(data.encouraging) || 0,
+      topStudent: Number(data.topStudent) || 0,
+      strugglingStudent: Number(data.strugglingStudent) || 0,
+      total: Number(data.total) || 0
+    }
+  }
 }

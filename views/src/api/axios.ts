@@ -1,5 +1,6 @@
+//views\src\api\axios.ts
 /* eslint-disable prefer-promise-reject-errors */
-import type { AxiosResponse } from 'axios'
+import type {  AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 
 import { useMessage } from 'naive-ui'
@@ -14,6 +15,15 @@ const instance = axios.create({
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
   },
   // timeout: 5000,
+})
+
+instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 const message = useMessage()
 instance.interceptors.response.use(

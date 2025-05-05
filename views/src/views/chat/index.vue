@@ -243,7 +243,7 @@ async function onConversation3() {
           }
 
           console.log("referenced content: ", mergedContent)
-          if(documentContent.data.content.length>0)
+          if (documentContent.data.content.length > 0)
             message = `请根据以下参考资料回答问题：\n\n${mergedContent}\n\n 用户的输入：${message}`
         }
 
@@ -286,16 +286,36 @@ async function onConversation3() {
             )
 
             // ✅ 新增保存逻辑（在流处理完成后保存）
+            // if (lastText.trim() && !lastText.includes('(无回答)')) {
+            //   chatStore.saveChatToServer(+uuid, {
+            //     text: message,
+            //     response: lastText,
+            //     dateTime: new Date().toISOString(),
+            //     inversion: false,
+            //     error: false,
+            //     loading: false,
+            //     requestOptions: {
+            //       prompt: message,
+            //       options: { ...options },
+            //       character: currentCharacter.value
+            //     }
+            //   })
+            // }
+
+            // 在保存逻辑部分修改为：
             if (lastText.trim() && !lastText.includes('(无回答)')) {
+              // 获取对应的用户消息（当前AI消息索引-1）
+              const userMessage = dataSources.value[dataSources.value.length - 2]?.text || message;
+
               chatStore.saveChatToServer(+uuid, {
-                text: message,
+                text: userMessage, // 使用用户消息的text
                 response: lastText,
                 dateTime: new Date().toISOString(),
                 inversion: false,
                 error: false,
                 loading: false,
                 requestOptions: {
-                  prompt: message,
+                  prompt: userMessage, // 同步修正prompt字段
                   options: { ...options },
                   character: currentCharacter.value
                 }
@@ -920,7 +940,7 @@ function handleStop() {
   if (loading.value) {
     controller.abort()
     loading.value = false
-    
+
     // 立即更新最后一条消息状态
     const currentIndex = dataSources.value.length - 1
     updateChatSome(
@@ -931,10 +951,10 @@ function handleStop() {
         text: `${dataSources.value[currentIndex].text}\n[已手动停止响应]`
       }
     )
-    
+
     // 强制滚动到底部
     scrollToBottomIfAtBottom()
-    
+
     // 创建新控制器以备下次使用
     controller = new AbortController()
   }
@@ -1024,8 +1044,9 @@ const parseFile = async (fileItem: FileItem) => {
   formData.append('file', fileItem.file);
 
   try {
+    const url = `${import.meta.env.VITE_VIEWS_ADDRESS}/api/file/parse`;
     // ✅ 使用统一配置的 axios 实例
-    const response = await axios.post('/file/parse', formData, {
+    const response = await axios.post(url, formData, {
       headers: {
         // ✅ 自动携带 Token（通过拦截器）
         'Content-Type': 'multipart/form-data' // 必须显式声明
@@ -1038,6 +1059,39 @@ const parseFile = async (fileItem: FileItem) => {
     throw new Error(`[${fileItem.file.name}] 上传失败: ${errorMsg}`);
   }
 };
+// const parseFile = async (fileItem: FileItem) => {
+//   if (fileItem.file.size > 10 * 1024 * 1024) {
+//     throw new Error('单个文件大小不能超过10MB');
+//   }
+
+//   const formData = new FormData();
+//   formData.append('file', fileItem.file);
+
+//   try {
+//     const url = `${import.meta.env.VITE_VIEWS_ADDRESS}/api/file/parse`;
+//     const response = await axios.post(url, formData, {
+//       headers: {
+//         'Content-Type': 'application/json', 
+//         Authorization: `Bearer ${localStorage.getItem('access_token')}`
+//       },
+//       timeout: 30000
+//     });
+//     return response.data;
+//   } catch (error: any) {
+//     // ✅ 修正5：细化错误处理
+//     const status = error.response?.status;
+//     let errorMsg = '网络请求失败';
+
+//     if (status === 401) {
+//       errorMsg = '身份认证过期，请重新登录';
+//     } else if (status === 413) {
+//       errorMsg = '文件大小超过服务器限制';
+//     }
+
+//     throw new Error(`[${fileItem.file.name}] 上传失败: ${errorMsg}`);
+//   }
+// };
+
 
 // 修改后的文件处理逻辑
 const handleFileSelect = async (e: Event) => {
@@ -1223,7 +1277,7 @@ const handleCharacterChange = (value: CharacterType) => {
           <div class="flex flex-1 items-center space-x-2">
             <!-- 文件上传按钮 -->
             <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect"
-            accept=".pdf,.docx,.csv,.pptx,.txt,.md,.xlsx,.json,.png,.jpg,.jpeg,.xml,.html,.vue,.py,.js,.ts,.java,.cpp,.c,.kt,.rs,.tex">
+              accept=".pdf,.docx,.csv,.pptx,.txt,.md,.xlsx,.json,.png,.jpg,.jpeg,.xml,.html,.vue,.py,.js,.ts,.java,.cpp,.c,.kt,.rs,.tex">
             <NTooltip trigger="hover" placement="top">
               <template #trigger>
                 <HoverButton @click="triggerFileInput" class="flex-shrink-0">

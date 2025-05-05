@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect, NTooltip } from 'naive-ui'
+import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect, NTooltip, NAffix, NDropdown } from 'naive-ui'
 import html2canvas from 'html2canvas'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
@@ -923,6 +923,7 @@ const renderOption = (option: { label: string }) => {
 }
 
 const placeholder = computed(() => {
+  if (!currentCharacter.value) return '请先选择性格模板后再输入问题';
   if (isMobile.value)
     return t('chat.placeholderMobile')
   return t('chat.placeholder')
@@ -931,7 +932,7 @@ const placeholder = computed(() => {
 // 修改buttonDisabled计算属性
 const buttonDisabled = computed(() => {
   const hasUnparsed = fileList.value.some(item => !item.parsed)
-  return loading.value || !prompt.value || prompt.value.trim() === '' || hasUnparsed
+  return loading.value || !prompt.value || prompt.value.trim() === '' || hasUnparsed || !currentCharacter.value
 })
 const footerClass = computed(() => {
   let classes = ['p-4']
@@ -1080,8 +1081,18 @@ const handleCharacterChange = (value: CharacterType) => {
           :class="[isMobile ? 'p-2' : 'p-4']">
           <div class="flex items-center justify-between p-4 border-b dark:border-neutral-800">
             <div class="flex items-center space-x-4">
-              <NSelect v-model:value="currentCharacter" :options="characterOptions"
-                :placeholder="('chat.selectCharacter')" @update:value="handleCharacterChange" />
+              <NAffix :top="24" :right="24">
+                <NDropdown :options="characterOptions.map(opt => ({
+                  label: opt.label,
+                  key: opt.value
+                }))"
+                  @select="handleCharacterChange"
+                >
+                  <NButton type="primary" size="small">
+                    选择性格
+                  </NButton>
+                </NDropdown>
+              </NAffix>
             </div>
           </div>
           <template v-if="!dataSources.length">

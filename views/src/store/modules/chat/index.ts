@@ -13,7 +13,7 @@ const characterInfo = {
 }
 
 export const useChatStore = defineStore('chat-store', {
-  state: (): Chat.ChatState & { 
+  state: (): Chat.ChatState & {
     isSubmitting: boolean;
     submitTimer: NodeJS.Timeout | null;
   } => ({
@@ -186,6 +186,33 @@ export const useChatStore = defineStore('chat-store', {
       return null
     },
 
+    //存储ai回答结果
+    async saveChatToServer(uuid: number, chat: Chat.Chat) {
+      // 等待500ms确保DOM更新完成
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 严格校验响应内容
+      if (!chat.response?.trim() || chat.response === '(无回答)') {
+        console.error('拒绝保存无效回答:', chat)
+        return
+      }
+
+      try {
+        const authStore = useAuthStore()
+        await axios.post('/chat/record', {
+          question: chat.text,
+          answer: chat.response,
+          characterUsed: this.currentCharacter,
+          username: authStore.user?.username,
+          name: authStore.user?.name
+        })
+        console.log('✅ 存储成功:', chat)
+      } catch (error) {
+        console.error('存储失败:', error)
+        throw error
+      }
+    },
+
     async addChatByUuid(uuid: number, chat: Chat.Chat) {
       const authStore = useAuthStore()
       if (!uuid || uuid === 0) {
@@ -226,32 +253,6 @@ export const useChatStore = defineStore('chat-store', {
         if (this.history[index].title === 'New Chat')
           this.history[index].title = chat.text
         this.recordState()
-      }
-
-      // 新增聊天记录保存逻辑（在消息处理完成后调用）
-      try {
-        // ✅ 使用配置好的 axios 实例
-        await axios.post('/chat/record', {
-          question: chat.text,
-          answer: chat.response || '(无回答)', // ✅ 确保传递有效值
-          characterUsed: this.currentCharacter,
-          username: authStore.user?.username,
-          name: authStore.user?.name
-        }, {
-          headers: {
-            'Content-Type': 'application/json', // 明确指定内容类型
-            // ✅ 通过拦截器自动携带 Token 或手动添加（根据项目配置）
-            Authorization: `Bearer ${authStore.token}`
-          }
-        })
-      } catch (error: any) {
-        console.error('[ChatStore] 聊天记录保存失败:', {
-          error: error.response?.data || error.message,
-          payload: {
-            question: chat.text,
-            uuid
-          }
-        })
       }
     },
 

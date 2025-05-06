@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NSelect, NTooltip, NAffix, NDropdown } from 'naive-ui'
+import { NAutoComplete, NButton, NInput, NSwitch, useDialog, useMessage, NTooltip } from 'naive-ui'
 import html2canvas from 'html2canvas'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
@@ -19,40 +19,40 @@ import { fetchStreamData } from '@/api/api'
 import axios from '@/utils/request/axios'
 import { modelsStore } from '@/store/modules/models/models-setting'
 import { useCharacter } from '@/hooks/useCharacter'
-import { characterPrompts, CharacterType } from '@/templates/characterPrompts'
+import { CharacterType } from '@/templates/characterPrompts'
 import CharacterSelector from './components/CharacterSelector.vue'
 let controller = new AbortController()
 
 // 以下为文本编辑器相关内容👇
 {
-	const templates = ref<Array<{ name: string, prompt: string, preview: string, }>>([])
+	// const templates = ref<Array<{ name: string, prompt: string, preview: string, }>>([])
 
-	const loadTemplates = async () => {
-		try {
-			const modules = import.meta.glob('@/templates/*.txt', {
-				as: 'raw',
-				eager: true
-			})
+	// const loadTemplates = async () => {
+	// 	try {
+	// 		const modules = import.meta.glob('@/templates/*.txt', {
+	// 			as: 'raw',
+	// 			eager: true
+	// 		})
 
-			templates.value = Object.entries(modules).map(([path, content]) => {
-				// 从文件路径提取模板名称
-				const fullFileName = path.split('/').pop() || ''
-				const fileName = fullFileName.replace(/\\/g, '/').split('/').pop() || '';
-				const firstLine = content.split('\n')[0].trim()
-				const preview = firstLine.length > 30 ? firstLine.slice(0, 30) + '...' : firstLine;
-				return {
-					name: fileName, // 直接使用文件名作为显示名称
-					prompt: content,
-					preview: preview  //选取prompt第一行作为预览
-				}
-			})
-		}
+	// 		templates.value = Object.entries(modules).map(([path, content]) => {
+	// 			// 从文件路径提取模板名称
+	// 			const fullFileName = path.split('/').pop() || ''
+	// 			const fileName = fullFileName.replace(/\\/g, '/').split('/').pop() || '';
+	// 			const firstLine = content.split('\n')[0].trim()
+	// 			const preview = firstLine.length > 30 ? firstLine.slice(0, 30) + '...' : firstLine;
+	// 			return {
+	// 				name: fileName, // 直接使用文件名作为显示名称
+	// 				prompt: content,
+	// 				preview: preview  //选取prompt第一行作为预览
+	// 			}
+	// 		})
+	// 	}
 
-		catch (error) {
-			console.error('加载模板失败:', error)
-			ms.error('模板加载失败，请检查模板文件')
-		}
-	}
+	// 	catch (error) {
+	// 		console.error('加载模板失败:', error)
+	// 		ms.error('模板加载失败，请检查模板文件')
+	// 	}
+	// }
 
 	// 挂载时加载模板
 	// onMounted(() => {
@@ -1181,12 +1181,12 @@ const triggerFileInput = () => {
 const { currentCharacter, setCurrentCharacter } = useCharacter()
 
 // 性格选项
-const characterOptions = [
-	{ label: '严厉型（教师角色）', value: 'strict' },
-	{ label: '鼓励型（教师角色）', value: 'encouraging' },
-	{ label: '学霸领学型（同学角色）', value: 'topStudent' },
-	{ label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' }
-]
+// const characterOptions = [
+// 	{ label: '严厉型（教师角色）', value: 'strict' },
+// 	{ label: '鼓励型（教师角色）', value: 'encouraging' },
+// 	{ label: '学霸领学型（同学角色）', value: 'topStudent' },
+// 	{ label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' }
+// ]
 
 // 性格选择器相关
 const showCharacterSelector = ref(false)

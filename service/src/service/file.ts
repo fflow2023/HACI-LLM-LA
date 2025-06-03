@@ -457,56 +457,151 @@ export class FileService {
 
   // 上传文件向量化
   async refactorVectorStore() {
-    const loader = new DirectoryLoader(
-      "./fileUpload",
-      {
-        ".pdf": (path) => new PDFLoader(path),
-        ".csv": (path) => new CSVLoader(path),       // 新增 CSV 支持
-        ".docx": (path) => new DocxLoader(path),
-        ".epub": (path) => new EPubLoader(path),            // 新增 EPUB 支持
-        ".srt": (path) => new SRTLoader(path),              // 新增 SRT 字幕支持
-        ".jsonl": (path) => new JSONLinesLoader(path, "/html"), // 新增 JSONL 支持
-        // 特殊格式专用loader
-
-        // 纯文本格式（共20种直接列出）
-        ".txt": (path) => new TextLoader(path),
-        ".md": (path) => new TextLoader(path),
-        ".py": (path) => new TextLoader(path),
-        ".js": (path) => new TextLoader(path),
-        ".ts": (path) => new TextLoader(path),
-        ".java": (path) => new TextLoader(path),
-        ".cpp": (path) => new TextLoader(path),
-        ".c": (path) => new TextLoader(path),
-        ".kt": (path) => new TextLoader(path),
-        ".rs": (path) => new TextLoader(path),
-        ".tex": (path) => new TextLoader(path),
-        ".vue": (path) => new TextLoader(path),
-        ".html": (path) => new TextLoader(path),
-        ".xml": (path) => new TextLoader(path),
-        ".json": (path) => new TextLoader(path),
-        ".css": (path) => new TextLoader(path),
-        ".sh": (path) => new TextLoader(path),
-        ".yaml": (path) => new TextLoader(path),
-        ".yml": (path) => new TextLoader(path),
-        ".conf": (path) => new TextLoader(path),
-        ".": (path) => new TextLoader(path)  //DirectoryLoader 的原生实现只做精确匹配，没有通配符逻辑 这个是无后缀名的文件
+    console.log('【调试】开始重建向量存储库...');
+    
+    try {
+      // 1. 加载文件上传目录内容
+      const directoryPath = './fileUpload';
+      const files = fs.readdirSync(directoryPath);
+      console.log(`【调试】发现 ${files.length} 个文件在 ${directoryPath} 目录中：`, files);
+      
+      if (files.length === 0) {
+        console.warn('【警告】没有找到任何文件！请检查 fileUpload 目录');
       }
-    );
-
-    // 文本切割,将文档拆分为块
-    const textsplitter = new RecursiveCharacterTextSplitter({
-      separators: ["\n\n", "\n", "。", "！", "？"],
-      chunkSize: 400,
-      chunkOverlap: 100,
-    })
-    const docs = await loader.loadAndSplit(textsplitter);
-
-    // 加载向量存储库 
-    const vectorStore = await MemoryVectorStore.fromDocuments(
-      docs,
-      EmbeddingManager.getCurrentEmbedding()
-    );
-    GlobalService.globalVar = vectorStore
+      
+      // 2. 初始化 DirectoryLoader
+     const loader = new DirectoryLoader(
+        "./fileUpload",
+        {
+          ".pdf": (path) => new PDFLoader(path),
+          ".csv": (path) => new CSVLoader(path),       // 新增 CSV 支持
+          ".docx": (path) => new DocxLoader(path),
+          ".epub": (path) => new EPubLoader(path),            // 新增 EPUB 支持
+          ".srt": (path) => new SRTLoader(path),              // 新增 SRT 字幕支持
+          ".jsonl": (path) => new JSONLinesLoader(path, "/html"), // 新增 JSONL 支持
+          // 特殊格式专用loader
+  
+          // 纯文本格式（共20种直接列出）
+          ".txt": (path) => new TextLoader(path),
+          ".md": (path) => new TextLoader(path),
+          ".py": (path) => new TextLoader(path),
+          ".js": (path) => new TextLoader(path),
+          ".ts": (path) => new TextLoader(path),
+          ".java": (path) => new TextLoader(path),
+          ".cpp": (path) => new TextLoader(path),
+          ".c": (path) => new TextLoader(path),
+          ".kt": (path) => new TextLoader(path),
+          ".rs": (path) => new TextLoader(path),
+          ".tex": (path) => new TextLoader(path),
+          ".vue": (path) => new TextLoader(path),
+          ".html": (path) => new TextLoader(path),
+          ".xml": (path) => new TextLoader(path),
+          ".json": (path) => new TextLoader(path),
+          ".css": (path) => new TextLoader(path),
+          ".sh": (path) => new TextLoader(path),
+          ".yaml": (path) => new TextLoader(path),
+          ".yml": (path) => new TextLoader(path),
+          ".conf": (path) => new TextLoader(path),
+          ".": (path) => new TextLoader(path)  //DirectoryLoader 的原生实现只做精确匹配，没有通配符逻辑 这个是无后缀名的文件
+        }
+      );
+      
+      // 3. 加载并解析文件
+      console.log('【调试】开始加载和解析文件...');
+      const rawDocuments = await loader.load();
+      console.log(`【调试】成功加载 ${rawDocuments.length} 个文档`);
+      
+      // 记录每个文件的处理结果
+      const fileStats = {};
+      rawDocuments.forEach((doc, index) => {
+        const sourceFile = doc.metadata.source;
+        const charCount = doc.pageContent.length;
+        
+        if (!fileStats[sourceFile]) {
+          fileStats[sourceFile] = { charCount: 0, chunks: 0 };
+        }
+        fileStats[sourceFile].charCount += charCount;
+        
+        // 记录文档片段的前100字符
+        console.log(`【调试】文档 ${index + 1} (来源: ${sourceFile}) - ${charCount} 字符`);
+        console.log(`    文本预览: ${doc.pageContent.substring(0, 100)}${charCount > 100 ? '...' : ''}`);
+      });
+      
+      // 4. 文本分割
+      console.log('【调试】开始文本分割...');
+      const textsplitter = new RecursiveCharacterTextSplitter({
+        separators: ["\n\n", "\n", "。", "！", "？"],
+        chunkSize: 400,
+        chunkOverlap: 100,
+      });
+      
+      const docs = await textsplitter.splitDocuments(rawDocuments);
+      console.log(`【调试】分割后共生成 ${docs.length} 个文本块`);
+      
+      // 分析文本块分布
+      const chunkSizes = docs.map(doc => doc.pageContent.length);
+      const avgSize = Math.round(chunkSizes.reduce((a, b) => a + b, 0) / chunkSizes.length);
+      const minSize = Math.min(...chunkSizes);
+      const maxSize = Math.max(...chunkSizes);
+      
+      console.log('【调试】文本块统计:');
+      console.log(`  - 最小块大小: ${minSize} 字符`);
+      console.log(`  - 最大块大小: ${maxSize} 字符`);
+      console.log(`  - 平均块大小: ${avgSize} 字符`);
+      
+      // 记录分割结果样例
+      console.log('【调试】前 3 个文本块样例:');
+      docs.slice(0, 3).forEach((doc, i) => {
+        console.log(`  --- 块 ${i + 1} (${doc.pageContent.length} 字符) ---`);
+        console.log(`     元数据: ${JSON.stringify(doc.metadata)}`);
+        console.log(`     内容: ${doc.pageContent.substring(0, 150)}${doc.pageContent.length > 150 ? '...' : ''}`);
+      });
+      
+      // 5. 获取嵌入模型
+      console.log('【调试】获取嵌入模型...');
+      const embeddingModel = EmbeddingManager.getCurrentEmbedding();
+      console.log(`【调试】当前使用的嵌入模型: ${embeddingModel.constructor.name}`);
+      
+      // 6. 创建向量存储
+      console.log('【调试】开始创建向量存储...');
+      const vectorStore = await MemoryVectorStore.fromDocuments(
+        docs,
+        embeddingModel
+      );
+      
+      // 7. 验证向量存储
+      console.log('【调试】向量存储创建完成，正在验证...');
+      
+      // 测试查询
+      const testQuery = '测试查询';
+      const testResults = await vectorStore.similaritySearch(testQuery, 1);
+      
+      console.log('【调试】验证查询结果:');
+      if (testResults.length > 0) {
+        console.log(`  - 获取 ${testResults.length} 个结果`);
+        console.log(`  - 第一个结果得分: ${testResults[0]?.metadata?.score || 'N/A'}`);
+        console.log(`  - 来源文件: ${testResults[0]?.metadata?.source || '未知'}`);
+        console.log(`  - 内容预览: ${testResults[0]?.pageContent?.substring(0, 100) || '无内容'}...`);
+      } else {
+        console.warn('【警告】测试查询返回空结果！向量库可能为空或未正确索引');
+      }
+      
+      // 8. 存储在全局变量
+      GlobalService.globalVar = vectorStore;
+      console.log('【调试】向量存储已存储在 GlobalService.globalVar');
+      
+      // 9. 汇总报告
+      console.log('【调试】向量库构建完成汇总报告:');
+      console.log(`  - 加载文件数: ${Object.keys(fileStats).length}`);
+      console.log(`  - 原始文本字符数: ${rawDocuments.reduce((sum, doc) => sum + doc.pageContent.length, 0)}`);
+      console.log(`  - 生成文本块数: ${docs.length}`);
+      console.log(`  - 向量库状态: ${vectorStore?.memoryVectors?.length || 0} 个向量`);
+      
+      return { success: true, stats: { files: fileStats, chunks: docs.length } };
+    } catch (error) {
+      console.error('【错误】向量库重建过程中发生错误:', error);
+      throw error; // 重新抛出以便调用方处理
+    }
   }
 
 

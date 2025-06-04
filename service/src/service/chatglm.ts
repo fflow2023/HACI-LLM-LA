@@ -17,16 +17,16 @@ export class ChatglmService {
     try {
       // 解构请求参数
       const { message, hyperparameters } = body;
-      
+
       // 参数验证调试
       console.log('【调试】step1: 接收参数');
       console.log(`  > 用户查询: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`);
       console.log(`  > 字符长度: ${message.length}`);
-      
+
       // 解析 hyperparameters
       const docNum = hyperparameters?.['document_number'] || 2;
       console.log(`  > 请求文档切片数: ${docNum}`);
-      
+
       // 验证向量存储库状态
       console.log('【调试】step2: 检查向量存储状态');
       if (!GlobalService.globalVar) {
@@ -35,86 +35,131 @@ export class ChatglmService {
         throw new Error(errorMsg);
       }
       console.log('  √ 向量存储已初始化');
-      
+
       const vectorStore = GlobalService.globalVar;
-      
+
       // 向量存储健康检查
       const vectorCount = vectorStore.memoryVectors?.length || 0;
       console.log(`  > 向量库状态: ${vectorCount}个文档切片`);
-      
+
       if (vectorCount === 0) {
         const errorMsg = '向量库为空，无法检索';
         console.error(`  ${errorMsg}`);
         throw new Error(errorMsg);
       }
-      
+
       // 执行相似度搜索
       console.log('【调试】step3: 执行相似度搜索');
       const searchStart = Date.now();
-      const result = await vectorStore.similaritySearch(message, docNum);
+      // 使用带分数的相似度搜索方法
+      const resultsWithScore = await vectorStore.similaritySearchWithScore(message, docNum);
       const searchDuration = Date.now() - searchStart;
-      
+
       console.log(`  √ 搜索完成 (耗时: ${searchDuration}ms)`);
-      console.log(`  > 返回结果数: ${result.length}`);
-      
+      console.log(`  > 返回结果数: ${resultsWithScore.length}`);
+
       // 详细分析搜索结果
       console.log('【调试】step4: 搜索结果分析');
-      if (result.length > 0) {
+      if (resultsWithScore.length > 0) {
         console.log('  搜索结果明细:');
-        result.forEach((doc, i) => {
+
+        // 计算分数统计数据
+        let minScore = Infinity;
+        let maxScore = -Infinity;
+        let totalScore = 0;
+
+        resultsWithScore.forEach(([doc, score], i) => {
           const sourceFile = doc.metadata?.source || '未知来源';
           const fileName = sourceFile.split('/').pop();
-          const contentPreview = doc.pageContent.substring(0, 100).replace(/\n/g, ' ') + '...';
-          
-          // 相关度评分（如有）
-          const score = doc.score !== undefined ? ` 评分: ${doc.score.toFixed(3)}` : '';
-          
-          console.log(`  [${i + 1}] 来源: ${fileName} | 长度: ${doc.pageContent.length}字符${score}`);
+
+          // 安全获取文档内容和预览
+          const pageContent = doc.pageContent || ''; // 防止undefined
+          const contentPreview = pageContent.length > 0
+            ? pageContent.substring(0, 100).replace(/\n/g, ' ') + (pageContent.length > 100 ? '...' : '')
+            : '[无内容]';
+
+          // 更新分数统计
+          minScore = Math.min(minScore, score);
+          maxScore = Math.max(maxScore, score);
+          totalScore += score;
+
+          // 输出带分数的详细信息
+          console.log(`  [${i + 1}] 来源: ${fileName} | 分数: ${score.toFixed(4)} | 长度: ${pageContent.length}字符`);
           console.log(`      内容预览: ${contentPreview}`);
         });
+
+        // 计算平均分
+        const avgScore = totalScore / resultsWithScore.length;
+
+        // 输出分数统计摘要
+        console.log('【分数统计】');
+        console.log(`  > 最高分: ${maxScore.toFixed(4)}`);
+        console.log(`  > 最低分: ${minScore.toFixed(4)}`);
+        console.log(`  > 平均分: ${avgScore.toFixed(4)}`);
       } else {
         console.warn('  ⚠️ 未找到匹配的文档切片');
       }
-      
+
       // 处理结果
       console.log('【调试】step5: 处理检索结果');
       const fileUrl = [];
       const content = [];
-      
-      for (let i = 0; i < result.length; i++) {
-        const sourcePath = result[i].metadata.source;
-        const fileName = sourcePath.split("/").pop();
-        const docContent = result[i].pageContent;
-        
+      const scores = []; // 添加分数存储
+
+      for (let i = 0; i < resultsWithScore.length; i++) {
+        // 从结果中解构出文档对象和分数
+        const [doc, score] = resultsWithScore[i];
+
+        const sourcePath = doc.metadata?.source || '';
+        const fileName = sourcePath.split('/').pop() || '未知文件';
+
+        // 安全获取文档内容
+        const docContent = doc.pageContent || '';
+
         fileUrl.push('/static/' + fileName);
         content.push(docContent);
-        
-        // 调试输出每个文件的处理
-        console.log(`  > 处理切片${i + 1}: ${fileName} (${docContent.length}字符)`);
+        scores.push(score); // 存储分数
+
+        // 调试输出带分数的处理信息
+        console.log(`  > 处理切片${i + 1}: ${fileName} | 分数: ${score.toFixed(4)} | 长度: ${docContent.length}字符`);
       }
-      
+
       // 最终结果统计
       const totalChars = content.reduce((sum, text) => sum + text.length, 0);
       console.log('【调试】处理完成统计:');
       console.log(`  > 返回切片数: ${content.length}`);
       console.log(`  > 总字符数: ${totalChars}字符`);
-      console.log(`  > 平均切片长度: ${Math.round(totalChars / content.length)}字符`);
-      
+      console.log(`  > 平均切片长度: ${content.length > 0 ? Math.round(totalChars / content.length) : 0}字符`);
+
+      // 分数统计
+      if (scores.length > 0) {
+        const min = Math.min(...scores);
+        const max = Math.max(...scores);
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+        console.log('【分数统计】');
+        console.log(`  > 最高分: ${max.toFixed(4)}`);
+        console.log(`  > 最低分: ${min.toFixed(4)}`);
+        console.log(`  > 平均分: ${avg.toFixed(4)}`);
+      }
+
       const totalDuration = Date.now() - startTime;
       console.log('【chatfileContent】==== 文档检索结束 ====');
       console.log(`  总耗时: ${totalDuration}ms`);
-      
+
+      // 返回结果中添加分数
       return {
         content: content,
-        url: fileUrl
+        url: fileUrl,
+        scores: scores // 返回分数数组
       };
-      
+
     } catch (error) {
       const errorTime = Date.now() - startTime;
       console.error('【错误】文档检索失败:', error);
       console.log('【chatfileContent】==== 检索异常结束 ====');
       console.log(`  异常耗时: ${errorTime}ms`);
-      
+
       throw error; // 重新抛出错误，由上层处理
     }
   }

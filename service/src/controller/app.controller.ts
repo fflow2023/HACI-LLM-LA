@@ -100,7 +100,9 @@ export class AppController {
     @Body() body: any
   ) {
     console.log('api调用: file 上传文件');
-    console.log('原始文件名:', file.originalname);
+    // const originalname = file.originalname;
+    const originalname = decodeURIComponent(escape(file.originalname));  //解决编码问题
+    console.log('原始文件名:', originalname);
 
     const knowledgeBase = body.knowledgeBase || '英语'; // 默认为英语
     console.log('选择的知识库:', knowledgeBase);
@@ -114,7 +116,7 @@ export class AppController {
       this.appService.ensureDirectoryExists(kbPath);
 
       // 构建目标文件路径
-      const destPath = path.join(kbPath, file.originalname);
+      const destPath = path.join(kbPath, originalname);
       console.log('目标路径:', destPath);
 
       // 移动文件到知识库目录

@@ -19,7 +19,6 @@ dist
 pnpm-lock.yaml
 
 fileProcessing
-fileUpload
 
 # mac
 .DS_Store

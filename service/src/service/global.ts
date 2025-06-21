@@ -1,3 +1,4 @@
 export class GlobalService{ 
-    static globalVar: any; 
+    static en_globalVar: any;  //英语
+    static jp_globalVar: any;  //日语
  }

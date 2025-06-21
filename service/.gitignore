@@ -19,7 +19,8 @@ dist
 pnpm-lock.yaml
 
 fileProcessing
-# fileUpload
+fileUpload
+knowledgeBases
 
 # add .env
 .env

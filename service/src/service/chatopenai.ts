@@ -14,7 +14,7 @@ export class ChatopenaiService {
         const { message, history , api_key , basePath} = body;
         console.log("step1" , basePath);
 
-        const vectorStore = GlobalService.globalVar
+        const vectorStore = GlobalService.en_globalVar
         const result = await vectorStore.similaritySearch(message, 1);
         console.log('step2', result);
         

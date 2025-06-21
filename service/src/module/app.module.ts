@@ -75,6 +75,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class AppModule implements OnApplicationBootstrap {
   constructor(private readonly appService: AppService) {}
   async onApplicationBootstrap() {
-    await this.appService.refactorVectorStore();
+    await this.appService.refactorVectorStore('英语');
+    await this.appService.refactorVectorStore('日语');
   }
 }

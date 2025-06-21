@@ -24,6 +24,20 @@ import chardet from 'chardet';
 import { BaseDocumentLoader } from 'langchain/dist/document_loaders/base';
 import { Document } from "langchain/document";
 
+// 修改文件存储路径，按知识库分目录
+const getKnowledgeBasePath = (knowledgeBase) => `./knowledgeBases/${knowledgeBase}`;
+
+// 确保目录存在
+const ensureDirectoryExists = (path) => {
+  if (!fs.existsSync(path)) {
+    fs.mkdirSync(path, { recursive: true });
+  }
+};
+const ensureKnowledgeBaseExists = (knowledgeBase) => {
+  const basePath = getKnowledgeBasePath(knowledgeBase);
+  ensureDirectoryExists(basePath);
+  return basePath;
+};
 @Injectable()
 export class FileService {
   private readonly allowedExtensions = new Set([
@@ -456,9 +470,10 @@ export class FileService {
 
 
   // 上传文件向量化
-  async refactorVectorStore() {
+  async refactorVectorStore(knowledgeBase) {
+    const knowledgeBasePath = ensureKnowledgeBaseExists(knowledgeBase);
     const loader = new DirectoryLoader(
-      "./fileUpload",
+      knowledgeBasePath,
       {
         ".pdf": (path) => new PDFLoader(path),
         ".csv": (path) => new CSVLoader(path),       // 新增 CSV 支持
@@ -495,8 +510,8 @@ export class FileService {
 
     // 文本切割,将文档拆分为块
     const textsplitter = new RecursiveCharacterTextSplitter({
-      separators: ["\n\n", "\n", "。", "！", "？"],
-      chunkSize: 400,
+      separators: ["\n\n", "\n", "。", "！", "？", ".", "!", "?"],
+      chunkSize: 800,
       chunkOverlap: 100,
     })
     const docs = await loader.loadAndSplit(textsplitter);
@@ -506,21 +521,29 @@ export class FileService {
       docs,
       EmbeddingManager.getCurrentEmbedding()
     );
-    GlobalService.globalVar = vectorStore
+    if (knowledgeBase == "英语") {
+      GlobalService.en_globalVar = vectorStore
+      console.log('EN知识库向量化成功！');
+    } else {
+      GlobalService.jp_globalVar = vectorStore
+      console.log('JP知识库向量化成功！');
+    }
   }
 
 
   //获取本地文件列表
-  async getFileList() {
-    const directoryPath = './fileUpload';
+  async getFileList(knowledgeBase) {
+    const directoryPath = getKnowledgeBasePath(knowledgeBase);
+    ensureDirectoryExists(directoryPath);
     const files = fs.readdirSync(directoryPath);
     return files;
   }
 
   //删除文件
-  async deleteFile(fileName) {
-    const directoryPath = './fileUpload';
+  async deleteFile(fileName, knowledgeBase) {
+    const directoryPath = getKnowledgeBasePath(knowledgeBase);
+    ensureDirectoryExists(directoryPath);
     fs.rmSync(`${directoryPath}/${fileName}`);
-    this.refactorVectorStore();
+    this.refactorVectorStore(knowledgeBase);
   }
 }

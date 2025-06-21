@@ -14,10 +14,10 @@ import { HoverButton, SvgIcon } from '@/components/common'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useChatStore, usePromptStore } from '@/store'
 import { t } from '@/locales'
-import { chat, chatOpenAI, chatSiliconflow, chatfile, chatfileOpenai, chatfileContent } from '@/api/chat'
+import { chatSiliconflow, chatfile, chatfileContent } from '@/api/chat'
 import { fetchStreamData } from '@/api/api'
 import axios from '@/utils/request/axios'
-import { modelsStore } from '@/store/modules/models/models-setting'
+// import { modelsStore } from '@/store/modules/models/models-setting'
 import { useCharacter } from '@/hooks/useCharacter'
 import { CharacterType } from '@/templates/characterPrompts'
 import CharacterSelector from './components/CharacterSelector.vue'
@@ -64,7 +64,7 @@ let controller = new AbortController()
 
 // const openLongReply = import.meta.env.VITE_GLOB_OPEN_LONG_REPLY === 'true'
 
-const store = modelsStore()
+// const store = modelsStore()
 const route = useRoute()
 const dialog = useDialog()
 const ms = useMessage()
@@ -143,13 +143,13 @@ function handleSubmit() {
 	fileList.value = []
 
 	// 根据当前模型调用对应的处理函数
-	if (store.Chatgpt) {
-		onConversation2()
-	} else if (store.chatglm) {
-		onConversation()
-	} else if (store.siliconflow) {
+	// if (store.Chatgpt) {
+	// 	onConversation2()
+	// } else if (store.chatglm) {
+	// 	onConversation()
+	// } else if (store.siliconflow) {
 		onConversation3()
-	}
+	// }
 }
 
 // 延续接口，silicon flow的接口用onConversation3函数实现
@@ -325,7 +325,8 @@ async function onConversation3() {
 					}
 				}
 				step();
-			} else {
+			} 
+			else {
 				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream })
 				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
 				lastText += result
@@ -401,335 +402,335 @@ async function onConversation3() {
 }
 
 // onConversation 和onConversation2 不用
-async function onConversation() {
-	const message = prompt.value
-	if (usingContext.value) {
-		for (let i = 0; i < dataSources.value.length; i = i + 2)
-			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-	}
-	else { history.value.length = 0 }
-	if (!message || message.trim() === '')
-		return
+// async function onConversation() {
+// 	const message = prompt.value
+// 	if (usingContext.value) {
+// 		for (let i = 0; i < dataSources.value.length; i = i + 2)
+// 			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
+// 	}
+// 	else { history.value.length = 0 }
+// 	if (!message || message.trim() === '')
+// 		return
 
-	controller = new AbortController()
+// 	controller = new AbortController()
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: message,
-			inversion: true,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: null },
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: message,
+// 			inversion: true,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: null },
 
-		},
-	)
-	scrollToBottom()
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	loading.value = true
-	prompt.value = ''
+// 	loading.value = true
+// 	prompt.value = ''
 
-	let options: Chat.ConversationRequest = {}
-	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+// 	let options: Chat.ConversationRequest = {}
+// 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
 
-	if (lastContext && usingContext.value)
-		options = { ...lastContext }
+// 	if (lastContext && usingContext.value)
+// 		options = { ...lastContext }
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: '',
-			loading: true,
-			inversion: false,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: { ...options } },
-		},
-	)
-	scrollToBottom()
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: '',
+// 			loading: true,
+// 			inversion: false,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: { ...options } },
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	try {
-		const lastText = ''
-		const fetchChatAPIOnce = async () => {
-			const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
-			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-			updateChat(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					dateTime: new Date().toLocaleString(),
-					text: lastText + (result ?? ''),
-					inversion: false,
-					error: false,
-					loading: false,
-					conversationOptions: null,
-					requestOptions: { prompt: message, options: { ...options } },
-				},
-			)
-			scrollToBottomIfAtBottom()
-			loading.value = false
-			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
-				prompt: message,
-				options,
-				signal: controller.signal,
-				onDownloadProgress: ({ event }) => {
-					const xhr = event.target
-					const { responseText } = xhr
-					// Always process the final line
-					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-					let chunk = responseText
-					if (lastIndex !== -1)
-						chunk = responseText.substring(lastIndex)
-					try {
-						const data = JSON.parse(chunk)
-						updateChat(
-							+uuid,
-							dataSources.value.length - 1,
-							{
-								dateTime: new Date().toLocaleString(),
-								text: lastText + (data.text ?? ''),
-								inversion: false,
-								error: false,
-								loading: true,
-								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-								requestOptions: { prompt: message, options: { ...options } },
-							},
-						)
+// 	try {
+// 		const lastText = ''
+// 		const fetchChatAPIOnce = async () => {
+// 			const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
+// 			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
+// 			updateChat(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					dateTime: new Date().toLocaleString(),
+// 					text: lastText + (result ?? ''),
+// 					inversion: false,
+// 					error: false,
+// 					loading: false,
+// 					conversationOptions: null,
+// 					requestOptions: { prompt: message, options: { ...options } },
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			loading.value = false
+// 			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
+// 				prompt: message,
+// 				options,
+// 				signal: controller.signal,
+// 				onDownloadProgress: ({ event }) => {
+// 					const xhr = event.target
+// 					const { responseText } = xhr
+// 					// Always process the final line
+// 					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+// 					let chunk = responseText
+// 					if (lastIndex !== -1)
+// 						chunk = responseText.substring(lastIndex)
+// 					try {
+// 						const data = JSON.parse(chunk)
+// 						updateChat(
+// 							+uuid,
+// 							dataSources.value.length - 1,
+// 							{
+// 								dateTime: new Date().toLocaleString(),
+// 								text: lastText + (data.text ?? ''),
+// 								inversion: false,
+// 								error: false,
+// 								loading: true,
+// 								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+// 								requestOptions: { prompt: message, options: { ...options } },
+// 							},
+// 						)
 
-						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-							options.parentMessageId = data.id
-							lastText = data.text
-							message = ''
-							return fetchChatAPIOnce()
-						}
+// 						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+// 							options.parentMessageId = data.id
+// 							lastText = data.text
+// 							message = ''
+// 							return fetchChatAPIOnce()
+// 						}
 
-						scrollToBottomIfAtBottom()
-					}
-					catch (error) {
-						//
-					}
-				},
-			}) */
-			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-		}
+// 						scrollToBottomIfAtBottom()
+// 					}
+// 					catch (error) {
+// 						//
+// 					}
+// 				},
+// 			}) */
+// 			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+// 		}
 
-		await fetchChatAPIOnce()
-	}
-	catch (error: any) {
-		const errorMessage = error?.message ?? t('common.wrong')
+// 		await fetchChatAPIOnce()
+// 	}
+// 	catch (error: any) {
+// 		const errorMessage = error?.message ?? t('common.wrong')
 
-		if (error.message === 'canceled') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					loading: false,
-				},
-			)
-			scrollToBottomIfAtBottom()
-			return
-		}
+// 		if (error.message === 'canceled') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					loading: false,
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			return
+// 		}
 
-		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+// 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-		if (currentChat?.text && currentChat.text !== '') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					text: `${currentChat.text}\n[${errorMessage}]`,
-					error: false,
-					loading: false,
-				},
-			)
-			return
-		}
+// 		if (currentChat?.text && currentChat.text !== '') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					text: `${currentChat.text}\n[${errorMessage}]`,
+// 					error: false,
+// 					loading: false,
+// 				},
+// 			)
+// 			return
+// 		}
 
-		updateChat(
-			+uuid,
-			dataSources.value.length - 1,
-			{
-				dateTime: new Date().toLocaleString(),
-				text: errorMessage,
-				inversion: false,
-				error: true,
-				loading: false,
-				conversationOptions: null,
-				requestOptions: { prompt: message, options: { ...options } },
-			},
-		)
-		scrollToBottomIfAtBottom()
-	}
-	finally {
-		loading.value = false
-	}
-}
-async function onConversation2() {
-	const message = prompt.value
-	if (usingContext.value) {
-		for (let i = 0; i < dataSources.value.length; i = i + 2)
-			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-	}
-	else { history.value.length = 0 }
-	if (!message || message.trim() === '')
-		return
+// 		updateChat(
+// 			+uuid,
+// 			dataSources.value.length - 1,
+// 			{
+// 				dateTime: new Date().toLocaleString(),
+// 				text: errorMessage,
+// 				inversion: false,
+// 				error: true,
+// 				loading: false,
+// 				conversationOptions: null,
+// 				requestOptions: { prompt: message, options: { ...options } },
+// 			},
+// 		)
+// 		scrollToBottomIfAtBottom()
+// 	}
+// 	finally {
+// 		loading.value = false
+// 	}
+// }
+// async function onConversation2() {
+// 	const message = prompt.value
+// 	if (usingContext.value) {
+// 		for (let i = 0; i < dataSources.value.length; i = i + 2)
+// 			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
+// 	}
+// 	else { history.value.length = 0 }
+// 	if (!message || message.trim() === '')
+// 		return
 
-	controller = new AbortController()
+// 	controller = new AbortController()
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: message,
-			inversion: true,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: null },
-		},
-	)
-	scrollToBottom()
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: message,
+// 			inversion: true,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: null },
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	loading.value = true
-	prompt.value = ''
+// 	loading.value = true
+// 	prompt.value = ''
 
-	let options: Chat.ConversationRequest = {}
-	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+// 	let options: Chat.ConversationRequest = {}
+// 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
 
-	if (lastContext && usingContext.value)
-		options = { ...lastContext }
+// 	if (lastContext && usingContext.value)
+// 		options = { ...lastContext }
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: '',
-			loading: true,
-			inversion: false,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: { ...options } },
-		},
-	)
-	scrollToBottom()
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: '',
+// 			loading: true,
+// 			inversion: false,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: { ...options } },
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	try {
-		const lastText = ''
-		const fetchChatAPIOnce = async () => {
-			const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
-			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-			updateChat(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					dateTime: new Date().toLocaleString(),
-					text: lastText + (result ?? ''),
-					inversion: false,
-					error: false,
-					loading: false,
-					conversationOptions: null,
-					requestOptions: { prompt: message, options: { ...options } },
-				},
-			)
-			scrollToBottomIfAtBottom()
-			loading.value = false
-			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
-				prompt: message,
-				options,
-				signal: controller.signal,
-				onDownloadProgress: ({ event }) => {
-					const xhr = event.target
-					const { responseText } = xhr
-					// Always process the final line
-					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-					let chunk = responseText
-					if (lastIndex !== -1)
-						chunk = responseText.substring(lastIndex)
-					try {
-						const data = JSON.parse(chunk)
-						updateChat(
-							+uuid,
-							dataSources.value.length - 1,
-							{
-								dateTime: new Date().toLocaleString(),
-								text: lastText + (data.text ?? ''),
-								inversion: false,
-								error: false,
-								loading: true,
-								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-								requestOptions: { prompt: message, options: { ...options } },
-							},
-						)
+// 	try {
+// 		const lastText = ''
+// 		const fetchChatAPIOnce = async () => {
+// 			const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
+// 			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
+// 			updateChat(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					dateTime: new Date().toLocaleString(),
+// 					text: lastText + (result ?? ''),
+// 					inversion: false,
+// 					error: false,
+// 					loading: false,
+// 					conversationOptions: null,
+// 					requestOptions: { prompt: message, options: { ...options } },
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			loading.value = false
+// 			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
+// 				prompt: message,
+// 				options,
+// 				signal: controller.signal,
+// 				onDownloadProgress: ({ event }) => {
+// 					const xhr = event.target
+// 					const { responseText } = xhr
+// 					// Always process the final line
+// 					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+// 					let chunk = responseText
+// 					if (lastIndex !== -1)
+// 						chunk = responseText.substring(lastIndex)
+// 					try {
+// 						const data = JSON.parse(chunk)
+// 						updateChat(
+// 							+uuid,
+// 							dataSources.value.length - 1,
+// 							{
+// 								dateTime: new Date().toLocaleString(),
+// 								text: lastText + (data.text ?? ''),
+// 								inversion: false,
+// 								error: false,
+// 								loading: true,
+// 								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+// 								requestOptions: { prompt: message, options: { ...options } },
+// 							},
+// 						)
 
-						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-							options.parentMessageId = data.id
-							lastText = data.text
-							message = ''
-							return fetchChatAPIOnce()
-						}
+// 						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+// 							options.parentMessageId = data.id
+// 							lastText = data.text
+// 							message = ''
+// 							return fetchChatAPIOnce()
+// 						}
 
-						scrollToBottomIfAtBottom()
-					}
-					catch (error) {
-						//
-					}
-				},
-			}) */
-			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-		}
+// 						scrollToBottomIfAtBottom()
+// 					}
+// 					catch (error) {
+// 						//
+// 					}
+// 				},
+// 			}) */
+// 			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+// 		}
 
-		await fetchChatAPIOnce()
-	}
-	catch (error: any) {
-		const errorMessage = error?.message ?? t('common.wrong')
+// 		await fetchChatAPIOnce()
+// 	}
+// 	catch (error: any) {
+// 		const errorMessage = error?.message ?? t('common.wrong')
 
-		if (error.message === 'canceled') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					loading: false,
-				},
-			)
-			scrollToBottomIfAtBottom()
-			return
-		}
+// 		if (error.message === 'canceled') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					loading: false,
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			return
+// 		}
 
-		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+// 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-		if (currentChat?.text && currentChat.text !== '') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					text: `${currentChat.text}\n[${errorMessage}]`,
-					error: false,
-					loading: false,
-				},
-			)
-			return
-		}
+// 		if (currentChat?.text && currentChat.text !== '') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					text: `${currentChat.text}\n[${errorMessage}]`,
+// 					error: false,
+// 					loading: false,
+// 				},
+// 			)
+// 			return
+// 		}
 
-		updateChat(
-			+uuid,
-			dataSources.value.length - 1,
-			{
-				dateTime: new Date().toLocaleString(),
-				text: errorMessage,
-				inversion: false,
-				error: true,
-				loading: false,
-				conversationOptions: null,
-				requestOptions: { prompt: message, options: { ...options } },
-			},
-		)
-		scrollToBottomIfAtBottom()
-	}
-	finally {
-		loading.value = false
-	}
-}
+// 		updateChat(
+// 			+uuid,
+// 			dataSources.value.length - 1,
+// 			{
+// 				dateTime: new Date().toLocaleString(),
+// 				text: errorMessage,
+// 				inversion: false,
+// 				error: true,
+// 				loading: false,
+// 				conversationOptions: null,
+// 				requestOptions: { prompt: message, options: { ...options } },
+// 			},
+// 		)
+// 		scrollToBottomIfAtBottom()
+// 	}
+// 	finally {
+// 		loading.value = false
+// 	}
+// }
 
 // /* async function onRegenerate(index: number) {
 //   if (loading.value)

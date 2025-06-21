@@ -14,12 +14,17 @@ const emit = defineEmits<{
 
 const selectedCharacter = ref<CharacterType>('strict')
 
+// const characterOptions = [
+// 	{ label: '严厉型（教师角色）', value: 'strict' as CharacterType, icon: 'ri:user-follow-line', description: '严格要求、督促学习进度' },
+// 	{ label: '鼓励型（教师角色）', value: 'encouraging' as CharacterType, icon: 'ri:emotion-happy-line', description: '积极鼓励、关注学习兴趣' },
+// 	{ label: '学霸领学型（同学角色）', value: 'topStudent' as CharacterType, icon: 'ri:user-star-line', description: '高水平引导、分享学习经验' },
+// 	{ label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' as CharacterType, icon: 'ri:team-line', description: '奋斗共同进步、砥砺互相帮助' }
+// ]
 const characterOptions = [
-	{ label: '严厉型（教师角色）', value: 'strict' as CharacterType, icon: 'ri:user-follow-line', description: '严格要求、督促学习进度' },
-	{ label: '鼓励型（教师角色）', value: 'encouraging' as CharacterType, icon: 'ri:emotion-happy-line', description: '积极鼓励、关注学习兴趣' },
-	{ label: '学霸领学型（同学角色）', value: 'topStudent' as CharacterType, icon: 'ri:user-star-line', description: '高水平引导、分享学习经验' },
-	{ label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' as CharacterType, icon: 'ri:team-line', description: '奋斗共同进步、砥砺互相帮助' }
+	{ label: '日语学习助手', value: 'Japanese' as CharacterType, icon: 'ri:user-follow-line', description: '辅助日语学习' },
+	{ label: '英语学习助手', value: 'English' as CharacterType, icon: 'ri:emotion-happy-line', description: '辅助英语学习' }
 ]
+
 
 function handleConfirm() {
 	emit('select', selectedCharacter.value)

@@ -1203,19 +1203,21 @@ const handleCharacterSelect = (character: CharacterType) => {
 
 // 性格选择器图标映射
 const characterIconMap = {
-	strict: 'ri:user-follow-line',
-	encouraging: 'ri:emotion-happy-line',
-	topStudent: 'ri:user-star-line',
-	strugglingStudent: 'ri:team-line'
+	Japanese: 'ri:user-follow-line',
+	English: 'ri:emotion-happy-line'
 }
 
 // 获取当前性格的名称
 const getCurrentCharacterName = computed(() => {
+	// const characterMap = {
+	// 	strict: '严厉型教师',
+	// 	encouraging: '鼓励型教师',
+	// 	topStudent: '学霸同学',
+	// 	strugglingStudent: '奋斗同学'
+	// }
 	const characterMap = {
-		strict: '严厉型教师',
-		encouraging: '鼓励型教师',
-		topStudent: '学霸同学',
-		strugglingStudent: '奋斗同学'
+		Japanese: '日语学习助手',
+		English: '英语学习助手'
 	}
 	return currentCharacter.value ? characterMap[currentCharacter.value] : '请选择性格'
 })

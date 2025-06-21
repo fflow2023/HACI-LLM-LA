@@ -95,11 +95,15 @@ function exportData(): void {
   }
 
   // 添加性格类型信息到导出数据
+  // const characterInfo = {
+  //   strict: '严厉型（教师角色）',
+  //   encouraging: '鼓励型（教师角色）',
+  //   topStudent: '学霸领学型（同学角色）',
+  //   strugglingStudent: '学渣共同进步型（同学角色）'
+  // }
   const characterInfo = {
-    strict: '严厉型（教师角色）',
-    encouraging: '鼓励型（教师角色）',
-    topStudent: '学霸领学型（同学角色）',
-    strugglingStudent: '学渣共同进步型（同学角色）'
+    Janpanese: '日语学习助手',
+    English: '英语学习助手',
   }
 
   // 为每个历史记录添加性格类型描述

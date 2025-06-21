@@ -51,7 +51,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
     // 文件上传模块（保留原有配置）
     MulterModule.register({
       storage: diskStorage({
-        destination: './fileUpload',
+        destination: './knowledgeBases',
         filename: (req, file, cb) => {
           cb(null, decodeURIComponent(escape(file.originalname)));
         },
@@ -60,7 +60,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
     // 静态资源服务（保留原有配置）
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '../..', 'fileUpload'),
+      rootPath: join(__dirname, '../..', 'knowledgeBases'),
       serveRoot: '/static',
     }),
   ],

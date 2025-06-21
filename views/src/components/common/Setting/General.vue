@@ -102,7 +102,7 @@ function exportData(): void {
   //   strugglingStudent: '学渣共同进步型（同学角色）'
   // }
   const characterInfo = {
-    Janpanese: '日语学习助手',
+    Japanese: '日语学习助手',
     English: '英语学习助手',
   }
 
@@ -121,11 +121,11 @@ function exportData(): void {
       const historyItem = parsedData.history.find((h: any) => h.uuid === chatItem.uuid)
       return {
         ...chatItem,
-        character: historyItem?.character || 'strict',
+        character: historyItem?.character || 'Japanese',
         characterDescription: historyItem?.characterDescription || '未知性格类型',
         data: chatItem.data.map((message: any) => ({
           ...message,
-          character: historyItem?.character || 'strict',
+          character: historyItem?.character || 'Japanese',
           characterDescription: historyItem?.characterDescription || '未知性格类型'
         }))
       }

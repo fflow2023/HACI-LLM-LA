@@ -66,14 +66,16 @@ export class AppService {
   // }
 
   //文档问答
-  async chatfile(body,knowledgeBase) {
-    const res = new ChatglmService
-    return res.chatfile(body,knowledgeBase)
+  async chatfile(body: any, knowledgeBase: 'en' | 'jp') {
+    const res = new ChatglmService()
+    return res.chatfile(body, knowledgeBase)
   }
-  async chatfileContent(body,knowledgeBase) {
-    const res = new ChatglmService
-    return res.chatfileContent(body,knowledgeBase)
+  
+  async chatfileContent(body: any, knowledgeBase: 'en' | 'jp') {
+    const res = new ChatglmService()
+    return res.chatfileContent(body, knowledgeBase)
   }
+
 
 
   //OpenAI交互

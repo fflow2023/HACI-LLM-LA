@@ -85,6 +85,30 @@ export class AppController {
     }
   }
 
+  // 统一的映射函数
+  private mapKnowledgeBase(kb: string | undefined): 'en' | 'jp' {
+    const knowledgeBaseMap: Record<string, 'en' | 'jp'> = {
+      '英语': 'en',
+      '英文': 'en',
+      'english': 'en',
+      '日语': 'jp',
+      '日文': 'jp',
+      'japanese': 'jp'
+    };
+    
+    // 标准化输入：转为小写并去除空白
+    const normalizedKb = kb ? kb.trim().toLowerCase() : '';
+    
+    // 尝试从映射表中获取值
+    const mappedValue = Object.keys(knowledgeBaseMap)
+      .find(key => key.toLowerCase() === normalizedKb)
+      ? knowledgeBaseMap[normalizedKb]
+      : null;
+    
+    // 返回映射结果或默认值
+    return mappedValue || 'en';
+  }
+
   //文件相关处理
   //文件上传处理
   @Roles('ADMIN')
@@ -139,12 +163,10 @@ export class AppController {
   @Roles('ADMIN')
   @Get('file/query-list')
   async queryFileList(@Query('knowledgeBase') knowledgeBase: string) {
-    console.log('api调用:' + 'file 查询文件');
-    console.log('选择的知识库:' + knowledgeBase);
-    console.log(await this.appService.getFileList(knowledgeBase))
-
-
-    return await this.appService.getFileList(knowledgeBase)
+    const kb = this.mapKnowledgeBase(knowledgeBase);
+    console.log('api调用: 查询文件');
+    console.log('映射后的知识库:' + kb);
+    return await this.appService.getFileList(kb);
   }
 
   @Roles('ADMIN')
@@ -154,13 +176,11 @@ export class AppController {
     type: FileDeleteDto,
   })
   async deleteFile(@Body() body: any) {
-    console.log('api调用:' + 'file 删除文件');
-
-    const knowledgeBase = body.knowledgeBase;
-    console.log('选择的知识库:' + knowledgeBase);
+    const kb = this.mapKnowledgeBase(body.knowledgeBase);
+    console.log('api调用: 删除文件');
+    console.log('映射后的知识库:' + kb);
     console.log('删除的文件:' + body.fileName);
-
-    return await this.appService.deleteFile(body.fileName, knowledgeBase)
+    return await this.appService.deleteFile(body.fileName, kb);
   }
 
   //Chatglm相关
@@ -187,15 +207,10 @@ export class AppController {
   })
   async chatfile(
     @Body() body: any,
-
   ) {
-    console.log('api调用:' + 'chat - Glm文档问答');
-    let knowledgeBase = body.knowledgeBase;
-    if (!knowledgeBase || knowledgeBase.trim() === '') {
-      knowledgeBase = '英语';
-    }
-    return await this.appService.chatfile(body, knowledgeBase);
-
+    console.log('api调用: chat - Glm文档问答');
+    let knowledgeBase = body.knowledgeBase || '英语';
+    return await this.appService.chatfile(body, this.mapKnowledgeBase(knowledgeBase));
   }
 
   // @Public()
@@ -208,13 +223,11 @@ export class AppController {
   async chatfileContent(
     @Body() body: any,
   ) {
-    console.log('api调用:' + 'chat - Glm文档问答--只获取文档内容');
-    let knowledgeBase = body.knowledgeBase;
-    if (!knowledgeBase || knowledgeBase.trim() === '') {//如果没指定知识库参数默认是英语
-      knowledgeBase = '英语';
-    }
-    return await this.appService.chatfileContent(body, knowledgeBase);
+    console.log('api调用: chat - Glm文档问答--只获取文档内容');
+    let knowledgeBase = body.knowledgeBase || '英语';
+    return await this.appService.chatfileContent(body, this.mapKnowledgeBase(knowledgeBase));
   }
+
 
   //存储聊天记录
   @Post('chat/record')

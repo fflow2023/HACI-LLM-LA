@@ -128,7 +128,7 @@ export class AppController {
     const originalname = decodeURIComponent(escape(file.originalname));  //解决编码问题
     console.log('原始文件名:', originalname);
 
-    const knowledgeBase = body.knowledgeBase || '英语'; // 默认为英语
+    const knowledgeBase = this.mapKnowledgeBase(body.knowledgeBase || '英语') ; // 默认为英语
     console.log('选择的知识库:', knowledgeBase);
 
     try {

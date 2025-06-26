@@ -521,7 +521,7 @@ export class FileService {
       docs,
       EmbeddingManager.getCurrentEmbedding()
     );
-    if (knowledgeBase == "英语") {
+    if (knowledgeBase == "en") {
       GlobalService.en_globalVar = vectorStore
       console.log('EN知识库向量化成功！');
     } else {

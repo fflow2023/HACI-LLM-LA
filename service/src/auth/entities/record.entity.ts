@@ -42,8 +42,8 @@ export class ChatRecord {
     @Column({
         type: 'varchar',
         length: 50,
-        comment: '使用的学习助手',
-        default: 'Japanese'
+        comment: '使用的教师角色',
+        default: 'strict'
     })
     characterUsed: string;
 

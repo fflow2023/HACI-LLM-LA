@@ -14,14 +14,42 @@ import { HoverButton, SvgIcon } from '@/components/common'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useChatStore, usePromptStore } from '@/store'
 import { t } from '@/locales'
-import { chat, chatOpenAI, chatSiliconflow, chatfile, chatfileOpenai, chatfileContent } from '@/api/chat'
+import { chatSiliconflow, chatfile, chatfileContent } from '@/api/chat'
 import { fetchStreamData } from '@/api/api'
 import axios from '@/utils/request/axios'
-import { modelsStore } from '@/store/modules/models/models-setting'
+// import { modelsStore } from '@/store/modules/models/models-setting'
 import { useCharacter } from '@/hooks/useCharacter'
 import { CharacterType } from '@/templates/characterPrompts'
 import CharacterSelector from './components/CharacterSelector.vue'
 let controller = new AbortController()
+
+// ✅ 知识库配置
+type KnowledgeBaseType = '英语' | '日语';
+const knowledgeBases = [
+  { 
+    label: '英语学习助手', 
+    value: '英语' as KnowledgeBaseType,
+    icon: 'twemoji:flag-united-kingdom'
+  },
+  { 
+    label: '日语学习助手', 
+    value: '日语' as KnowledgeBaseType,
+    icon: 'twemoji:flag-japan'
+  }
+];
+
+// 当前知识库状态（指定类型）
+const currentKnowledgeBase = ref<KnowledgeBaseType>('英语'); // 默认选择英语
+const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
+
+// 选择知识库（添加类型注解）
+const selectKnowledgeBase = (value: KnowledgeBaseType) => {
+  currentKnowledgeBase.value = value;
+  showKnowledgeBaseMenu.value = false;
+  
+  // 可以在这里添加知识库切换后的逻辑
+  console.log(`切换到${value}知识库`);
+};
 
 // 以下为文本编辑器相关内容👇
 {
@@ -64,7 +92,7 @@ let controller = new AbortController()
 
 // const openLongReply = import.meta.env.VITE_GLOB_OPEN_LONG_REPLY === 'true'
 
-const store = modelsStore()
+// const store = modelsStore()
 const route = useRoute()
 const dialog = useDialog()
 const ms = useMessage()
@@ -143,13 +171,13 @@ function handleSubmit() {
 	fileList.value = []
 
 	// 根据当前模型调用对应的处理函数
-	if (store.Chatgpt) {
-		onConversation2()
-	} else if (store.chatglm) {
-		onConversation()
-	} else if (store.siliconflow) {
-		onConversation3()
-	}
+	// if (store.Chatgpt) {
+	// 	onConversation2()
+	// } else if (store.chatglm) {
+	// 	onConversation()
+	// } else if (store.siliconflow) {
+	onConversation3()
+	// }
 }
 
 // 延续接口，silicon flow的接口用onConversation3函数实现
@@ -228,6 +256,7 @@ async function onConversation3() {
 					try {
 						documentContent = await chatfileContent({
 							message: message,
+							knowledgeBase: currentKnowledgeBase.value, // 添加知识库参数
 							hyperparameters: {
 								document_number: 2,
 							}
@@ -325,7 +354,8 @@ async function onConversation3() {
 					}
 				}
 				step();
-			} else {
+			}
+			else {
 				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream })
 				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
 				lastText += result
@@ -401,335 +431,335 @@ async function onConversation3() {
 }
 
 // onConversation 和onConversation2 不用
-async function onConversation() {
-	const message = prompt.value
-	if (usingContext.value) {
-		for (let i = 0; i < dataSources.value.length; i = i + 2)
-			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-	}
-	else { history.value.length = 0 }
-	if (!message || message.trim() === '')
-		return
+// async function onConversation() {
+// 	const message = prompt.value
+// 	if (usingContext.value) {
+// 		for (let i = 0; i < dataSources.value.length; i = i + 2)
+// 			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
+// 	}
+// 	else { history.value.length = 0 }
+// 	if (!message || message.trim() === '')
+// 		return
 
-	controller = new AbortController()
+// 	controller = new AbortController()
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: message,
-			inversion: true,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: null },
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: message,
+// 			inversion: true,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: null },
 
-		},
-	)
-	scrollToBottom()
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	loading.value = true
-	prompt.value = ''
+// 	loading.value = true
+// 	prompt.value = ''
 
-	let options: Chat.ConversationRequest = {}
-	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+// 	let options: Chat.ConversationRequest = {}
+// 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
 
-	if (lastContext && usingContext.value)
-		options = { ...lastContext }
+// 	if (lastContext && usingContext.value)
+// 		options = { ...lastContext }
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: '',
-			loading: true,
-			inversion: false,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: { ...options } },
-		},
-	)
-	scrollToBottom()
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: '',
+// 			loading: true,
+// 			inversion: false,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: { ...options } },
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	try {
-		const lastText = ''
-		const fetchChatAPIOnce = async () => {
-			const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
-			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-			updateChat(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					dateTime: new Date().toLocaleString(),
-					text: lastText + (result ?? ''),
-					inversion: false,
-					error: false,
-					loading: false,
-					conversationOptions: null,
-					requestOptions: { prompt: message, options: { ...options } },
-				},
-			)
-			scrollToBottomIfAtBottom()
-			loading.value = false
-			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
-				prompt: message,
-				options,
-				signal: controller.signal,
-				onDownloadProgress: ({ event }) => {
-					const xhr = event.target
-					const { responseText } = xhr
-					// Always process the final line
-					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-					let chunk = responseText
-					if (lastIndex !== -1)
-						chunk = responseText.substring(lastIndex)
-					try {
-						const data = JSON.parse(chunk)
-						updateChat(
-							+uuid,
-							dataSources.value.length - 1,
-							{
-								dateTime: new Date().toLocaleString(),
-								text: lastText + (data.text ?? ''),
-								inversion: false,
-								error: false,
-								loading: true,
-								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-								requestOptions: { prompt: message, options: { ...options } },
-							},
-						)
+// 	try {
+// 		const lastText = ''
+// 		const fetchChatAPIOnce = async () => {
+// 			const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
+// 			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
+// 			updateChat(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					dateTime: new Date().toLocaleString(),
+// 					text: lastText + (result ?? ''),
+// 					inversion: false,
+// 					error: false,
+// 					loading: false,
+// 					conversationOptions: null,
+// 					requestOptions: { prompt: message, options: { ...options } },
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			loading.value = false
+// 			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
+// 				prompt: message,
+// 				options,
+// 				signal: controller.signal,
+// 				onDownloadProgress: ({ event }) => {
+// 					const xhr = event.target
+// 					const { responseText } = xhr
+// 					// Always process the final line
+// 					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+// 					let chunk = responseText
+// 					if (lastIndex !== -1)
+// 						chunk = responseText.substring(lastIndex)
+// 					try {
+// 						const data = JSON.parse(chunk)
+// 						updateChat(
+// 							+uuid,
+// 							dataSources.value.length - 1,
+// 							{
+// 								dateTime: new Date().toLocaleString(),
+// 								text: lastText + (data.text ?? ''),
+// 								inversion: false,
+// 								error: false,
+// 								loading: true,
+// 								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+// 								requestOptions: { prompt: message, options: { ...options } },
+// 							},
+// 						)
 
-						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-							options.parentMessageId = data.id
-							lastText = data.text
-							message = ''
-							return fetchChatAPIOnce()
-						}
+// 						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+// 							options.parentMessageId = data.id
+// 							lastText = data.text
+// 							message = ''
+// 							return fetchChatAPIOnce()
+// 						}
 
-						scrollToBottomIfAtBottom()
-					}
-					catch (error) {
-						//
-					}
-				},
-			}) */
-			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-		}
+// 						scrollToBottomIfAtBottom()
+// 					}
+// 					catch (error) {
+// 						//
+// 					}
+// 				},
+// 			}) */
+// 			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+// 		}
 
-		await fetchChatAPIOnce()
-	}
-	catch (error: any) {
-		const errorMessage = error?.message ?? t('common.wrong')
+// 		await fetchChatAPIOnce()
+// 	}
+// 	catch (error: any) {
+// 		const errorMessage = error?.message ?? t('common.wrong')
 
-		if (error.message === 'canceled') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					loading: false,
-				},
-			)
-			scrollToBottomIfAtBottom()
-			return
-		}
+// 		if (error.message === 'canceled') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					loading: false,
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			return
+// 		}
 
-		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+// 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-		if (currentChat?.text && currentChat.text !== '') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					text: `${currentChat.text}\n[${errorMessage}]`,
-					error: false,
-					loading: false,
-				},
-			)
-			return
-		}
+// 		if (currentChat?.text && currentChat.text !== '') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					text: `${currentChat.text}\n[${errorMessage}]`,
+// 					error: false,
+// 					loading: false,
+// 				},
+// 			)
+// 			return
+// 		}
 
-		updateChat(
-			+uuid,
-			dataSources.value.length - 1,
-			{
-				dateTime: new Date().toLocaleString(),
-				text: errorMessage,
-				inversion: false,
-				error: true,
-				loading: false,
-				conversationOptions: null,
-				requestOptions: { prompt: message, options: { ...options } },
-			},
-		)
-		scrollToBottomIfAtBottom()
-	}
-	finally {
-		loading.value = false
-	}
-}
-async function onConversation2() {
-	const message = prompt.value
-	if (usingContext.value) {
-		for (let i = 0; i < dataSources.value.length; i = i + 2)
-			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-	}
-	else { history.value.length = 0 }
-	if (!message || message.trim() === '')
-		return
+// 		updateChat(
+// 			+uuid,
+// 			dataSources.value.length - 1,
+// 			{
+// 				dateTime: new Date().toLocaleString(),
+// 				text: errorMessage,
+// 				inversion: false,
+// 				error: true,
+// 				loading: false,
+// 				conversationOptions: null,
+// 				requestOptions: { prompt: message, options: { ...options } },
+// 			},
+// 		)
+// 		scrollToBottomIfAtBottom()
+// 	}
+// 	finally {
+// 		loading.value = false
+// 	}
+// }
+// async function onConversation2() {
+// 	const message = prompt.value
+// 	if (usingContext.value) {
+// 		for (let i = 0; i < dataSources.value.length; i = i + 2)
+// 			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
+// 	}
+// 	else { history.value.length = 0 }
+// 	if (!message || message.trim() === '')
+// 		return
 
-	controller = new AbortController()
+// 	controller = new AbortController()
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: message,
-			inversion: true,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: null },
-		},
-	)
-	scrollToBottom()
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: message,
+// 			inversion: true,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: null },
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	loading.value = true
-	prompt.value = ''
+// 	loading.value = true
+// 	prompt.value = ''
 
-	let options: Chat.ConversationRequest = {}
-	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+// 	let options: Chat.ConversationRequest = {}
+// 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
 
-	if (lastContext && usingContext.value)
-		options = { ...lastContext }
+// 	if (lastContext && usingContext.value)
+// 		options = { ...lastContext }
 
-	addChat(
-		+uuid,
-		{
-			dateTime: new Date().toLocaleString(),
-			text: '',
-			loading: true,
-			inversion: false,
-			error: false,
-			conversationOptions: null,
-			requestOptions: { prompt: message, options: { ...options } },
-		},
-	)
-	scrollToBottom()
+// 	addChat(
+// 		+uuid,
+// 		{
+// 			dateTime: new Date().toLocaleString(),
+// 			text: '',
+// 			loading: true,
+// 			inversion: false,
+// 			error: false,
+// 			conversationOptions: null,
+// 			requestOptions: { prompt: message, options: { ...options } },
+// 		},
+// 	)
+// 	scrollToBottom()
 
-	try {
-		const lastText = ''
-		const fetchChatAPIOnce = async () => {
-			const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
-			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-			updateChat(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					dateTime: new Date().toLocaleString(),
-					text: lastText + (result ?? ''),
-					inversion: false,
-					error: false,
-					loading: false,
-					conversationOptions: null,
-					requestOptions: { prompt: message, options: { ...options } },
-				},
-			)
-			scrollToBottomIfAtBottom()
-			loading.value = false
-			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
-				prompt: message,
-				options,
-				signal: controller.signal,
-				onDownloadProgress: ({ event }) => {
-					const xhr = event.target
-					const { responseText } = xhr
-					// Always process the final line
-					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-					let chunk = responseText
-					if (lastIndex !== -1)
-						chunk = responseText.substring(lastIndex)
-					try {
-						const data = JSON.parse(chunk)
-						updateChat(
-							+uuid,
-							dataSources.value.length - 1,
-							{
-								dateTime: new Date().toLocaleString(),
-								text: lastText + (data.text ?? ''),
-								inversion: false,
-								error: false,
-								loading: true,
-								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-								requestOptions: { prompt: message, options: { ...options } },
-							},
-						)
+// 	try {
+// 		const lastText = ''
+// 		const fetchChatAPIOnce = async () => {
+// 			const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
+// 			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
+// 			updateChat(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					dateTime: new Date().toLocaleString(),
+// 					text: lastText + (result ?? ''),
+// 					inversion: false,
+// 					error: false,
+// 					loading: false,
+// 					conversationOptions: null,
+// 					requestOptions: { prompt: message, options: { ...options } },
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			loading.value = false
+// 			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
+// 				prompt: message,
+// 				options,
+// 				signal: controller.signal,
+// 				onDownloadProgress: ({ event }) => {
+// 					const xhr = event.target
+// 					const { responseText } = xhr
+// 					// Always process the final line
+// 					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
+// 					let chunk = responseText
+// 					if (lastIndex !== -1)
+// 						chunk = responseText.substring(lastIndex)
+// 					try {
+// 						const data = JSON.parse(chunk)
+// 						updateChat(
+// 							+uuid,
+// 							dataSources.value.length - 1,
+// 							{
+// 								dateTime: new Date().toLocaleString(),
+// 								text: lastText + (data.text ?? ''),
+// 								inversion: false,
+// 								error: false,
+// 								loading: true,
+// 								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+// 								requestOptions: { prompt: message, options: { ...options } },
+// 							},
+// 						)
 
-						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-							options.parentMessageId = data.id
-							lastText = data.text
-							message = ''
-							return fetchChatAPIOnce()
-						}
+// 						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+// 							options.parentMessageId = data.id
+// 							lastText = data.text
+// 							message = ''
+// 							return fetchChatAPIOnce()
+// 						}
 
-						scrollToBottomIfAtBottom()
-					}
-					catch (error) {
-						//
-					}
-				},
-			}) */
-			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-		}
+// 						scrollToBottomIfAtBottom()
+// 					}
+// 					catch (error) {
+// 						//
+// 					}
+// 				},
+// 			}) */
+// 			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
+// 		}
 
-		await fetchChatAPIOnce()
-	}
-	catch (error: any) {
-		const errorMessage = error?.message ?? t('common.wrong')
+// 		await fetchChatAPIOnce()
+// 	}
+// 	catch (error: any) {
+// 		const errorMessage = error?.message ?? t('common.wrong')
 
-		if (error.message === 'canceled') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					loading: false,
-				},
-			)
-			scrollToBottomIfAtBottom()
-			return
-		}
+// 		if (error.message === 'canceled') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					loading: false,
+// 				},
+// 			)
+// 			scrollToBottomIfAtBottom()
+// 			return
+// 		}
 
-		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
+// 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-		if (currentChat?.text && currentChat.text !== '') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					text: `${currentChat.text}\n[${errorMessage}]`,
-					error: false,
-					loading: false,
-				},
-			)
-			return
-		}
+// 		if (currentChat?.text && currentChat.text !== '') {
+// 			updateChatSome(
+// 				+uuid,
+// 				dataSources.value.length - 1,
+// 				{
+// 					text: `${currentChat.text}\n[${errorMessage}]`,
+// 					error: false,
+// 					loading: false,
+// 				},
+// 			)
+// 			return
+// 		}
 
-		updateChat(
-			+uuid,
-			dataSources.value.length - 1,
-			{
-				dateTime: new Date().toLocaleString(),
-				text: errorMessage,
-				inversion: false,
-				error: true,
-				loading: false,
-				conversationOptions: null,
-				requestOptions: { prompt: message, options: { ...options } },
-			},
-		)
-		scrollToBottomIfAtBottom()
-	}
-	finally {
-		loading.value = false
-	}
-}
+// 		updateChat(
+// 			+uuid,
+// 			dataSources.value.length - 1,
+// 			{
+// 				dateTime: new Date().toLocaleString(),
+// 				text: errorMessage,
+// 				inversion: false,
+// 				error: true,
+// 				loading: false,
+// 				conversationOptions: null,
+// 				requestOptions: { prompt: message, options: { ...options } },
+// 			},
+// 		)
+// 		scrollToBottomIfAtBottom()
+// 	}
+// 	finally {
+// 		loading.value = false
+// 	}
+// }
 
 // /* async function onRegenerate(index: number) {
 //   if (loading.value)
@@ -1234,21 +1264,63 @@ const getCurrentCharacterName = computed(() => {
 			<div class="max-w-screen-xl mx-auto flex items-center justify-between p-3">
 				<div class="flex items-center space-x-2">
 					<h1 class="text-lg font-medium text-gray-800 dark:text-gray-200">智能学习助手</h1>
-					<div v-if="!hasSelectedCharacter" class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+					<div v-if="!hasSelectedCharacter"
+						class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
 						请选择性格
 					</div>
 				</div>
 
 				<div class="flex items-center space-x-3">
+					<!-- 语言知识库选择器 -->
+					<div class="relative">
+						<button @click.stop="showKnowledgeBaseMenu = !showKnowledgeBaseMenu"
+							class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors border border-indigo-200 dark:border-gray-600">
+							<SvgIcon icon="ri:translate-2" class="text-indigo-600 dark:text-indigo-400" />
+							<span class="text-sm text-gray-700 dark:text-gray-300">
+								{{knowledgeBases.find(kb => kb.value === currentKnowledgeBase)?.label || '语言助手'}}
+							</span>
+							<SvgIcon :icon="showKnowledgeBaseMenu ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
+								class="text-xs text-gray-500 transition-transform" />
+						</button>
+
+						<!-- 下拉菜单 - 带过渡动画 -->
+						<transition enter-active-class="transition duration-200 ease-out"
+							enter-from-class="transform opacity-0 scale-95 translate-y-1"
+							enter-to-class="transform opacity-100 scale-100"
+							leave-active-class="transition duration-150 ease-in"
+							leave-from-class="transform opacity-100 scale-100"
+							leave-to-class="transform opacity-0 scale-95 translate-y-1">
+							<div v-show="showKnowledgeBaseMenu"
+								class="absolute z-10 mt-1 w-44 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-right right-0">
+								<div class="py-1">
+									<template v-for="kb in knowledgeBases" :key="kb.value">
+										<button @click="selectKnowledgeBase(kb.value)" :class="{
+											'bg-gray-100 dark:bg-gray-700': currentKnowledgeBase === kb.value,
+											'text-indigo-700 dark:text-indigo-300': currentKnowledgeBase === kb.value
+										}" class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+											<SvgIcon
+												:icon="kb.value === '英语' ? 'twemoji:flag-united-kingdom' : 'twemoji:flag-japan'"
+												class="mr-2 w-5 h-5" />
+											<span>{{ kb.label }}</span>
+											<SvgIcon v-if="currentKnowledgeBase === kb.value" icon="ri:check-line"
+												class="ml-auto text-indigo-500 dark:text-indigo-400" />
+										</button>
+									</template>
+								</div>
+							</div>
+						</transition>
+					</div>
 					<!-- 性格切换按钮 - 美化版 -->
 					<NTooltip trigger="hover" placement="bottom">
 						<template #trigger>
 							<button @click="showCharacterSelector = true"
 								class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-green-50 hover:bg-green-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors border border-green-200 dark:border-gray-600">
 								<span class="flex items-center text-green-600 dark:text-green-400">
-									<SvgIcon :icon="currentCharacter ? characterIconMap[currentCharacter] : 'ri:user-line'" />
+									<SvgIcon
+										:icon="currentCharacter ? characterIconMap[currentCharacter] : 'ri:user-line'" />
 								</span>
-								<span class="text-sm text-gray-700 dark:text-gray-300">{{ getCurrentCharacterName }}</span>
+								<span class="text-sm text-gray-700 dark:text-gray-300">{{ getCurrentCharacterName
+								}}</span>
 								<SvgIcon icon="ri:arrow-down-s-line" class="text-xs text-gray-500" />
 							</button>
 						</template>
@@ -1312,8 +1384,8 @@ const getCurrentCharacterName = computed(() => {
 					<template v-else>
 						<div>
 							<Message v-for="(item, index) of dataSources" :key="index" :attachments="item.attachments"
-								:date-time="item.dateTime" :text="item.text" :inversion="item.inversion" :error="item.error"
-								:loading="item.loading" @delete="handleDelete(index)" />
+								:date-time="item.dateTime" :text="item.text" :inversion="item.inversion"
+								:error="item.error" :loading="item.loading" @delete="handleDelete(index)" />
 							<div class="sticky bottom-0 left-0 flex justify-center">
 								<NButton v-if="loading" type="warning" @click="handleStop">
 									<template #icon>
@@ -1336,7 +1408,8 @@ const getCurrentCharacterName = computed(() => {
 						class="flex items-center px-2 py-1 bg-gray-100 dark:bg-neutral-700 rounded">
 						<span class="text-sm truncate max-w-xs">{{ fileItem.file.name }}</span>
 						<div class="ml-1 flex items-center space-x-1">
-							<SvgIcon v-if="fileItem.parsing" icon="ri:loader-4-line" class="text-sm animate-spin text-blue-500" />
+							<SvgIcon v-if="fileItem.parsing" icon="ri:loader-4-line"
+								class="text-sm animate-spin text-blue-500" />
 							<SvgIcon v-else-if="fileItem.parsed" icon="ri:check-line" class="text-sm text-green-500" />
 							<button @click="fileList.splice(index, 1)" class="text-gray-500 hover:text-red-500">
 								<SvgIcon icon="ri:close-line" class="text-sm" />
@@ -1396,11 +1469,12 @@ const getCurrentCharacterName = computed(() => {
 					</div>
 
 					<div class="flex-1 min-w-0">
-						<NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption" class="w-full">
+						<NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption"
+							class="w-full">
 							<template #default="{ handleInput, handleBlur, handleFocus }">
 								<NInput ref="inputRef" v-model:value="prompt" type="textarea" :placeholder="placeholder"
-									:autosize="{ minRows: 1, maxRows: isMobile ? 4 : 8 }" @input="handleInput" @focus="handleFocus"
-									@blur="handleBlur" @keypress="handleEnter" />
+									:autosize="{ minRows: 1, maxRows: isMobile ? 4 : 8 }" @input="handleInput"
+									@focus="handleFocus" @blur="handleBlur" @keypress="handleEnter" />
 							</template>
 						</NAutoComplete>
 					</div>
@@ -1423,6 +1497,31 @@ const getCurrentCharacterName = computed(() => {
 </template>
 
 <style scoped>
+
+/* 淡入淡出动画 */
+.fade-enter-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.fade-enter-to {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-leave-active {
+  transition: opacity 0.15s, transform 0.15s;
+}
+.fade-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
 /* 新增样式 */
 .max-w-xs {
 	max-width: 10rem;

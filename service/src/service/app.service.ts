@@ -7,9 +7,22 @@ import { BingService } from './bing';
 import { DataSource } from 'typeorm';
 import { ChatRecord } from '../auth/entities/record.entity';
 import { EntityManager } from 'typeorm';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class AppService {
+  getKnowledgeBasePath(knowledgeBase: string): string {
+    return path.join(process.cwd(), 'knowledgeBases', knowledgeBase);
+  }
+
+  // 确保目录存在
+  ensureDirectoryExists(dirPath: string) {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  }
+
   //sql查询函数
   constructor(
     private readonly dataSource: DataSource,
@@ -47,56 +60,59 @@ export class AppService {
 
   //chatglm交互
   //自由对话
-  async chat(body) {
-    const res = new ChatglmService
-    return res.chat(body)
-  }
+  // async chat(body) {
+  //   const res = new ChatglmService
+  //   return res.chat(body)
+  // }
+
   //文档问答
-  async chatfile(body) {
-    const res = new ChatglmService
-    return res.chatfile(body)
+  async chatfile(body: any, knowledgeBase: 'en' | 'jp') {
+    const res = new ChatglmService()
+    return res.chatfile(body, knowledgeBase)
   }
-  async chatfileContent(body) {
-    const res = new ChatglmService
-    return res.chatfileContent(body)
+  
+  async chatfileContent(body: any, knowledgeBase: 'en' | 'jp') {
+    const res = new ChatglmService()
+    return res.chatfileContent(body, knowledgeBase)
   }
+
 
 
   //OpenAI交互
   //文档问答
-  async chatfileOpenAI(body) {
-    const res = new ChatopenaiService
-    return res.chatfileOpenAI(body)
+  // async chatfileOpenAI(body) {
+  //   const res = new ChatopenaiService
+  //   return res.chatfileOpenAI(body)
 
-  }
-  //自由对话
-  async chatOpenAI(body) {
-    const res = new ChatopenaiService
-    return res.chatOpenAI(body)
-  }
+  // }
+  // //自由对话
+  // async chatOpenAI(body) {
+  //   const res = new ChatopenaiService
+  //   return res.chatOpenAI(body)
+  // }
   //文档问答-只获取内容
 
   //文件相关处理
   //文件向量化
-  async refactorVectorStore() {
+  async refactorVectorStore(knowledgeBase) {
     const res = new FileService
-    return res.refactorVectorStore()
+    return res.refactorVectorStore(knowledgeBase)
   }
   //获取文件列表
-  async getFileList() {
+  async getFileList(knowledgeBase) {
 
     const res = new FileService
-    return res.getFileList()
+    return res.getFileList(knowledgeBase)
   }
   //删除文件
-  async deleteFile(fileName) {
+  async deleteFile(fileName,knowledgeBase) {
     const res = new FileService
-    return res.deleteFile(fileName)
+    return res.deleteFile(fileName,knowledgeBase)
   }
 
   //bing搜索
-  async bingsearch(body) {
-    const res = new BingService
-    return res.search(body)
-  }
+  // async bingsearch(body) {
+  //   const res = new BingService
+  //   return res.search(body)
+  // }
 }

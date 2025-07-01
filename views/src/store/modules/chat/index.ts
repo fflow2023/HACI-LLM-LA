@@ -5,16 +5,13 @@ import { CharacterType } from '@/templates/characterPrompts'
 import { useAuthStore } from '../auth'
 import axios from '@/utils/request/axios'
 
-// const characterInfo = {
-//   strict: '严厉型（教师角色）',
-//   encouraging: '鼓励型（教师角色）',
-//   topStudent: '学霸领学型（同学角色）',
-//   strugglingStudent: '学渣共同进步型（同学角色）'
-// }
 const characterInfo = {
-  Japanese: '日语学习助手',
-  Enslish: '英语学习助手'
+  strict: '严厉型（教师角色）',
+  encouraging: '鼓励型（教师角色）',
+  topStudent: '学霸领学型（同学角色）',
+  strugglingStudent: '学渣共同进步型（同学角色）'
 }
+
 export const useChatStore = defineStore('chat-store', {
   state: (): Chat.ChatState & {
     isSubmitting: boolean;
@@ -57,7 +54,7 @@ export const useChatStore = defineStore('chat-store', {
     addHistory(history: Chat.History, chatData: Chat.Chat[] = []) {
       const authStore = useAuthStore()
 
-      const character = history.character as CharacterType || 'Japanese'
+      const character = history.character as CharacterType || 'strict'
       const characterDescription = characterInfo[character] || '未知性格类型'
 
       // 添加用户信息到历史记录

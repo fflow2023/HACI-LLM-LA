@@ -2,7 +2,7 @@
 <template>
   <header class="admin-header">
     <div class="header-left">
-      <h1>AI学习助手管理端</h1>
+      <h1>AI语言学习助手管理端</h1>
     </div>
     <div class="header-right">
       <span class="welcome-text">欢迎回来，管理员</span>

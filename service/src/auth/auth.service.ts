@@ -26,9 +26,11 @@ export class AuthService {
     question: string;
     answer: string;
     characterUsed: string;
+    knowledgeBase?: 'japanese' | 'english' | 'none'; 
   }) {
     const record = this.chatRecordRepo.create({
       ...recordData,
+      knowledgeBase: recordData.knowledgeBase || 'none',
       createdAt: new Date()
     });
     return this.chatRecordRepo.save(record);

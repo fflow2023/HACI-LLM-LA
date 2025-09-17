@@ -25,6 +25,7 @@ declare namespace Chat {
 			character?: string;
 			// 新增用户信息关联
 			userInfoRef?: string; // 关联meta中的用户信息
+			knowledgeBase?: 'none' | 'english' | 'japanese';
 		}
 		// 新增附件类型
 		attachments?: Array<{

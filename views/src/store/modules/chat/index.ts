@@ -191,6 +191,9 @@ export const useChatStore = defineStore('chat-store', {
       // 等待500ms确保DOM更新完成
       await new Promise(resolve => setTimeout(resolve, 500))
 
+      // 从 chat.requestOptions 中获取 knowledgeBase
+      const knowledgeBase = chat.requestOptions?.knowledgeBase || 'none';
+
       // 严格校验响应内容
       if (!chat.response?.trim() || chat.response === '(无回答)') {
         console.error('拒绝保存无效回答:', chat)
@@ -206,7 +209,8 @@ export const useChatStore = defineStore('chat-store', {
           answer: chat.response,
           characterUsed: this.currentCharacter,
           username: authStore.user?.username,
-          name: authStore.user?.name
+          name: authStore.user?.name,
+          knowledgeBase
         })
         console.log('✅ 存储成功:', chat)
       } catch (error) {

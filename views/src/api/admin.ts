@@ -160,6 +160,7 @@ export interface ChatRecord {
   question: string
   answer: string
   characterUsed: string
+  knowledgeBase: string
   created_at: string
 }
 
@@ -167,6 +168,7 @@ function buildWhereClause(params: {
   name?: string
   username?: string
   characterUsed?: string
+  knowledgeBase?: string
   startTime?: string
   endTime?: string
 }): string {
@@ -180,6 +182,9 @@ function buildWhereClause(params: {
   }
   if (params.characterUsed) {
       conditions.push(`characterUsed = '${params.characterUsed.replace(/'/g, "''")}'`);
+  }
+  if (params.knowledgeBase) {
+      conditions.push(`knowledgeBase = '${params.knowledgeBase.replace(/'/g, "''")}'`);
   }
   if (params.startTime) {
       conditions.push(`created_at >= '${params.startTime}'`);
@@ -195,6 +200,7 @@ export async function fetchChatRecords(params: {
   name?: string
   username?: string
   characterUsed?: string
+  knowledgeBase?: string
   startTime?: string
   endTime?: string
   page?: number
@@ -205,7 +211,7 @@ export async function fetchChatRecords(params: {
       `LIMIT ${params.pageSize} OFFSET ${(params.page || 0) * (params.pageSize || 0)}` : '';
   
   const sql = `
-      SELECT id, username, name, question, answer, characterUsed, created_at
+      SELECT id, username, name, question, answer, characterUsed, knowledgeBase, created_at
       FROM chat_records
       ${whereClause}
       ORDER BY created_at DESC
@@ -213,8 +219,27 @@ export async function fetchChatRecords(params: {
   `;
 
   const result = await executeSQL(sql);
+  
+  // 安全处理结果数据
+  let records: ChatRecord[] = [];
+  
+  if (result.data && Array.isArray(result.data)) {
+    records = result.data.map((record: any) => {
+      return {
+        ...record,
+        knowledgeBase: record.knowledgeBase || 'none'
+      }
+    });
+  } else if (result.data && typeof result.data === 'object') {
+    // 处理单条记录的情况
+    records = [{
+      ...result.data,
+      knowledgeBase: result.data.knowledgeBase || 'none'
+    }];
+  }
+  
   return {
-      data: result.data as ChatRecord[],
+      data: records as ChatRecord[],
       error: result.error
   }
 }
@@ -223,6 +248,7 @@ export async function fetchChatRecordCount(params: {
   name?: string
   username?: string
   characterUsed?: string
+  knowledgeBase?: string
   startTime?: string
   endTime?: string
 }): Promise<{ data: number; error?: string }> {
@@ -243,11 +269,14 @@ export async function fetchChatRecordCount(params: {
   }
 }
 
+// 修改角色统计接口，添加英语和日语统计
 export interface CharacterStats {
   strict: number
   encouraging: number
   topStudent: number
   strugglingStudent: number
+  english: number  // 新增英语统计
+  japanese: number // 新增日语统计
   total: number
 }
 
@@ -258,6 +287,8 @@ export async function getallCharacterStats(): Promise<{ data: CharacterStats; er
       COUNT(CASE WHEN characterUsed = 'encouraging' THEN 1 END) as encouraging,
       COUNT(CASE WHEN characterUsed = 'topStudent' THEN 1 END) as topStudent,
       COUNT(CASE WHEN characterUsed = 'strugglingStudent' THEN 1 END) as strugglingStudent,
+      COUNT(CASE WHEN knowledgeBase = 'english' THEN 1 END) as english,
+      COUNT(CASE WHEN knowledgeBase = 'japanese' THEN 1 END) as japanese,
       COUNT(*) as total
     FROM chat_records
   `
@@ -272,6 +303,8 @@ export async function getallCharacterStats(): Promise<{ data: CharacterStats; er
       encouraging: Number(data.encouraging) || 0,
       topStudent: Number(data.topStudent) || 0,
       strugglingStudent: Number(data.strugglingStudent) || 0,
+      english: Number(data.english) || 0,
+      japanese: Number(data.japanese) || 0,
       total: Number(data.total) || 0
     }
   }
@@ -281,6 +314,7 @@ export async function getCharacterStats(params: {
   name?: string
   username?: string
   characterUsed?: string
+  knowledgeBase?: string
   startTime?: string
   endTime?: string
 }): Promise<{ data: CharacterStats; error?: string }> {
@@ -292,6 +326,8 @@ export async function getCharacterStats(params: {
       COUNT(CASE WHEN characterUsed = 'encouraging' THEN 1 END) as encouraging,
       COUNT(CASE WHEN characterUsed = 'topStudent' THEN 1 END) as topStudent,
       COUNT(CASE WHEN characterUsed = 'strugglingStudent' THEN 1 END) as strugglingStudent,
+      COUNT(CASE WHEN knowledgeBase = 'english' THEN 1 END) as english,
+      COUNT(CASE WHEN knowledgeBase = 'japanese' THEN 1 END) as japanese,
       COUNT(*) as total
     FROM chat_records
     ${whereClause}
@@ -307,6 +343,8 @@ export async function getCharacterStats(params: {
       encouraging: Number(data.encouraging) || 0,
       topStudent: Number(data.topStudent) || 0,
       strugglingStudent: Number(data.strugglingStudent) || 0,
+      english: Number(data.english) || 0,
+      japanese: Number(data.japanese) || 0,
       total: Number(data.total) || 0
     }
   }

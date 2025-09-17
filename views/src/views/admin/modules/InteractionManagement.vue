@@ -1,4 +1,4 @@
-//views\src\views\admin\modules\InteractionManagement.vue
+<!-- views\src\views\admin\modules\InteractionManagement.vue -->
 <template>
   <div class="interaction-management">
     <h2>交互记录管理</h2>
@@ -21,6 +21,15 @@
             <option value="encouraging">鼓励型</option>
             <option value="topStudent">学霸领学型</option>
             <option value="strugglingStudent">学渣共同进步型</option>
+          </select>
+        </div>
+        <div class="form-item language-item">
+          <label>语言：</label>
+          <select v-model="filterParams.knowledgeBase" class="language-select">
+            <option value="">全部</option>
+            <option value="english">英语</option>
+            <option value="japanese">日语</option>
+            <option value="none">无</option>
           </select>
         </div>
       </div>
@@ -66,9 +75,10 @@
           <th>ID</th>
           <th>学号</th>
           <th>姓名</th>
-          <th style="width: 25%">问题内容</th>
-          <th style="width: 25%">回答内容</th>
+          <th style="width: 20%">问题内容</th>
+          <th style="width: 20%">回答内容</th>
           <th>角色模式</th>
+          <th>语言</th>
           <th>时间</th>
         </tr>
       </thead>
@@ -88,6 +98,7 @@
             </div>
           </td>
           <td>{{ getRoleName(record.characterUsed) }}</td>
+          <td>{{ getLanguageName(record.knowledgeBase) }}</td>
           <td>{{ formatDate(record.created_at) }}</td>
         </tr>
       </tbody>
@@ -123,9 +134,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, defineProps } from 'vue'
-import { fetchChatRecords, fetchChatRecordCount, type ChatRecord, getCharacterStats,CharacterStats } from '@/api/admin'
-
+import { ref, watch, computed, onMounted } from 'vue'
+import { 
+  fetchChatRecords, 
+  fetchChatRecordCount, 
+  type ChatRecord, 
+  getCharacterStats,
+  type CharacterStats 
+} from '@/api/admin'
 
 const props = defineProps({
   searchUsername: {
@@ -134,12 +150,12 @@ const props = defineProps({
   }
 })
 
-
 // 筛选参数
 const filterParams = ref({
   name: '',
   username: props.searchUsername || '',
   characterUsed: '',
+  knowledgeBase: '',
   startTime: '',
   endTime: ''
 })
@@ -151,6 +167,7 @@ watch(() => props.searchUsername, (newUsername) => {
     handleSearch()
   }
 })
+
 // 分页参数
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -169,8 +186,15 @@ const currentContent = ref('')
 const roleMap = {
   strict: '严格型',
   encouraging: '鼓励型',
-  topStudent: '学霸领学型',
-  strugglingStudent: '学渣共同进步型'
+  topStudent: '学霸型',
+  strugglingStudent: '学渣型'
+}
+
+// 语言类型映射
+const languageMap = {
+  english: '英语',
+  japanese: '日语',
+  none: '无'
 }
 
 // 计算总页数
@@ -186,6 +210,11 @@ const getRoleName = (role: string) => {
   return roleMap[role as keyof typeof roleMap] || role
 }
 
+// 获取语言中文名称
+const getLanguageName = (language: string) => {
+  return languageMap[language as keyof typeof languageMap] || language
+}
+
 // 文本截断处理
 const truncateText = (text: string, maxLength = 100) => {
   return text.length > maxLength ? text.slice(0, maxLength) + '...' : text
@@ -197,14 +226,60 @@ const showDetail = (content: string) => {
   showDialog.value = true
 }
 
-
+// 角色统计
 const characterStats = ref<CharacterStats>({
   strict: 0,
   encouraging: 0,
   topStudent: 0,
   strugglingStudent: 0,
+  english: 0,
+  japanese: 0,
   total: 0
 })
+
+// 计算角色统计显示数据
+const roleStats = computed(() => {
+  const { strict, encouraging, topStudent, strugglingStudent, english, japanese, total } = characterStats.value
+  
+  // 计算英语和日语占比
+  const languageTotal = english + japanese
+  const englishPercent = languageTotal > 0 ? ((english / languageTotal) * 100).toFixed(1) : '0.0'
+  const japanesePercent = languageTotal > 0 ? ((japanese / languageTotal) * 100).toFixed(1) : '0.0'
+  
+  return [
+    { 
+      name: '严格型',
+      count: strict,
+      percent: total > 0 ? ((strict / total) * 100).toFixed(1) : '0.0'
+    },
+    { 
+      name: '鼓励型',
+      count: encouraging,
+      percent: total > 0 ? ((encouraging / total) * 100).toFixed(1) : '0.0'
+    },
+    { 
+      name: '学霸型',
+      count: topStudent,
+      percent: total > 0 ? ((topStudent / total) * 100).toFixed(1) : '0.0'
+    },
+    { 
+      name: '学渣型',
+      count: strugglingStudent,
+      percent: total > 0 ? ((strugglingStudent / total) * 100).toFixed(1) : '0.0'
+    },
+    { 
+      name: '英语',
+      count: english,
+      percent: englishPercent
+    },
+    { 
+      name: '日语',
+      count: japanese,
+      percent: japanesePercent
+    }
+  ]
+})
+
 // 加载数据
 const loadData = async () => {
   try {
@@ -239,7 +314,6 @@ const loadData = async () => {
   }
 }
 
-
 // 搜索处理
 const handleSearch = () => {
   currentPage.value = 1
@@ -252,6 +326,7 @@ const handleReset = () => {
     name: '',
     username: '',
     characterUsed: '',
+    knowledgeBase: '',
     startTime: '',
     endTime: ''
   }
@@ -263,31 +338,7 @@ const handlePageChange = (page: number) => {
   currentPage.value = page
   loadData()
 }
-const roleStats = computed(() => {
-  const { strict, encouraging, topStudent, strugglingStudent, total } = characterStats.value
-  return [
-    { 
-      name: '严格型',
-      count: strict,
-      percent: total > 0 ? ((strict / total) * 100).toFixed(1) : '0.0'
-    },
-    { 
-      name: '鼓励型',
-      count: encouraging,
-      percent: total > 0 ? ((encouraging / total) * 100).toFixed(1) : '0.0'
-    },
-    { 
-      name: '学霸型',
-      count: topStudent,
-      percent: total > 0 ? ((topStudent / total) * 100).toFixed(1) : '0.0'
-    },
-    { 
-      name: '学渣型',
-      count: strugglingStudent,
-      percent: total > 0 ? ((strugglingStudent / total) * 100).toFixed(1) : '0.0'
-    }
-  ]
-})
+
 // 初始加载
 onMounted(loadData)
 
@@ -313,7 +364,7 @@ const exportToCSV = async () => {
     // 添加UTF-8 BOM头
     const BOM = '\uFEFF';
 
-    const headers = ['ID', '学号', '姓名', '问题内容', '回答内容', '角色模式', '时间'];
+    const headers = ['ID', '学号', '姓名', '问题内容', '回答内容', '角色模式', '语言', '时间'];
     const csvRows = [
       headers.join(','),
       ...recordsToExport.map(record => [
@@ -323,6 +374,7 @@ const exportToCSV = async () => {
         escapeCsvField(record.question),
         escapeCsvField(record.answer),
         getRoleName(record.characterUsed),
+        getLanguageName(record.knowledgeBase),
         formatDate(record.created_at)
       ].join(','))
     ];
@@ -358,10 +410,14 @@ const escapeCsvField = (value: string) => {
   // 转义双引号，并用双引号包裹整个字段
   return `"${String(value).replace(/"/g, '""')}"`;
 };
-
 </script>
 
 <style scoped>
+.language-select {
+  width: 120px; /* 固定宽度 */
+  padding: 6px 8px; /* 更紧凑的内边距 */
+}
+
 .interaction-management {
   padding: 20px;
   position: relative;

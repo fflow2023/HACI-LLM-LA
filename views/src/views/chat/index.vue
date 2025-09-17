@@ -332,6 +332,11 @@ async function onConversation3() {
 						//   })
 						// }
 
+						const mapKnowledgeBaseForDb = (): 'none' | 'english' | 'japanese' => {
+							if (!active.value) return 'none'; // 知识库关闭 → none
+							return currentKnowledgeBase.value === '英语' ? 'english' : 'japanese';
+						};
+
 						// 在保存逻辑部分修改为：
 						if (lastText.trim() && !lastText.includes('(无回答)')) {
 							// 获取对应的用户消息（当前AI消息索引-1）
@@ -347,7 +352,8 @@ async function onConversation3() {
 								requestOptions: {
 									prompt: userMessage, // 同步修正prompt字段
 									options: { ...options },
-									character: currentCharacter.value
+									character: currentCharacter.value,
+									knowledgeBase: mapKnowledgeBaseForDb()
 								}
 							})
 						}

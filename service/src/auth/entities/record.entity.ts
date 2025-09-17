@@ -47,6 +47,14 @@ export class ChatRecord {
     })
     characterUsed: string;
 
+    @Column({
+        type: 'enum',
+        enum: ['japanese', 'english', 'none'],
+        default: 'none',
+        comment: '使用的知识库类型（日语/英语/无）'
+    })
+    knowledgeBase: string; 
+
     @CreateDateColumn({
         type: 'timestamp',
         name: 'created_at',

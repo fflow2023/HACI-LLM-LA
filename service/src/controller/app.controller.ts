@@ -238,11 +238,13 @@ export class AppController {
       question: string
       answer: string
       characterUsed: string
+      knowledgeBase?: 'japanese' | 'english' | 'none'
     }
   ) {
     return this.appService.logChatRecord({
       username: user.username,
       name: user.name,
+      knowledgeBase: body.knowledgeBase || 'none',
       ...body
     });
   }

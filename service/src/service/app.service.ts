@@ -47,10 +47,12 @@ export class AppService {
     question: string;
     answer: string;
     characterUsed: string;
+    knowledgeBase?: 'japanese' | 'english' | 'none';
   }) {
     // ✅ 直接通过 EntityManager 操作
     const record = this.entityManager.create(ChatRecord, {
       ...recordData,
+      knowledgeBase: recordData.knowledgeBase || 'none', 
       characterUsed: recordData.characterUsed, // 确保与实体字段名一致
       answer: recordData.answer || '', // 防止空值
       createdAt: new Date()

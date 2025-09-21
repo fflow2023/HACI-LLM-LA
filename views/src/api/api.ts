@@ -9,9 +9,8 @@ const { post } = axios;
 
 // 静态系统提示词
 const staticSystemPrompts = {
-	teacher: `你是一位在东北大学秦皇岛分校人工智能领域有着深厚学术造诣和丰富教学经验的专家，熟悉该分校的教学体系和学生的学习特点，能够为学生提供针对性的学习支持。你具备人工智能核心理论知识，包括机器学习、深度学习、自然语言处理等，同时掌握教学设计、学习策略制定和问题解决能力，能够结合实际案例进行讲解。为东北大学秦皇岛分校的学生提供专业的人工智能学习指导，帮助他们理解复杂概念，解决学习难题，提升学习效果，并培养他们的创新思维和实践能力。`,
-
-	student: `你是一位东北大学秦皇岛分校的学生，正在学习人工智能相关课程。你具备一定的编程基础和学习能力，对人工智能领域充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释复杂概念。你的目标是帮助其他同学更好地理解人工智能知识，共同进步。`
+  teacher: `你是一位在东北大学秦皇岛分校{language}教学领域有着深厚学术造诣和丰富教学经验的专家，熟悉该分校的教学体系和学生的学习特点，能够为学生提供针对性的{language}学习支持。你具备{language}教学核心理论知识，包括语法、词汇、发音和文化背景等，同时掌握教学设计、学习策略制定和问题解决能力，能够结合实际案例进行讲解。为东北大学秦皇岛分校的学生提供专业的{language}学习指导，帮助他们理解复杂概念，解决学习难题，提升学习效果，并培养他们的跨文化交际能力和{language}实践能力。`,
+  student: `你是一位东北大学秦皇岛分校的学生，正在学习{language}课程。你具备一定的{language}基础和学习能力，对{language}学习充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释{language}知识点。你的目标是帮助其他同学更好地理解{language}知识，共同进步。`
 };
 
 export const api = async (data: object): Promise<any> => {
@@ -46,7 +45,7 @@ let max_tokens_base: MaxTokensBase = {
 }
 
 // 修改remoteapi函数
-export const remoteapi = async (params: remoteapiParams): Promise<any> => {
+export const remoteapi = async (params: remoteapiParams, language: string): Promise<any> => {
 	let kind = params['kind']
 	let base = params['base']
 	let methods = params['methods']
@@ -61,12 +60,13 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	const characterInfo = characterPrompts[character]
 	console.log('Character info:', characterInfo) // 添加日志
 
-	// 获取静态系统提示词
-	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
-	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
 
+	// 获取静态系统提示词
+	const staticSystemPrompt = staticSystemPrompts[characterInfo.role].replace(/\{language\}/g, language);
+	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
+  
 	// 获取动态性格提示词
-	const characterPrompt = characterInfo.prompt
+	const characterPrompt = characterInfo.prompt.replace(/\{language\}/g, language);
 	console.log('Character prompt:', characterPrompt) // 添加日志
 
 	// 组合系统提示词
@@ -202,7 +202,7 @@ interface ChunkJson {
 }
 
 // 修改fetchStreamData函数
-export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal }) {
+export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal },language: string) {
 	// 添加 abort 信号监听
 	if (postparams.signal) {
 		postparams.signal.addEventListener('abort', () => {
@@ -222,11 +222,12 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 	console.log('Character info:', characterInfo) // 添加日志
 
 	// 获取静态系统提示词
-	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	const staticSystemPrompt = staticSystemPrompts[characterInfo.role].replace(/\{language\}/g, language);
 	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
 
+  
 	// 获取动态性格提示词
-	const characterPrompt = characterInfo.prompt
+	const characterPrompt = characterInfo.prompt.replace(/\{language\}/g, language);
 	console.log('Character prompt:', characterPrompt) // 添加日志
 
 	// 组合系统提示词

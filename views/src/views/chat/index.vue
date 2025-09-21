@@ -39,14 +39,16 @@ const knowledgeBases = [
 ];
 
 // 当前知识库状态（指定类型）
-const currentKnowledgeBase = ref<KnowledgeBaseType>('英语'); // 默认选择英语
+const currentKnowledgeBase = ref<KnowledgeBaseType>(
+  (localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
+);
 const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
 
 // 选择知识库（添加类型注解）
 const selectKnowledgeBase = (value: KnowledgeBaseType) => {
   currentKnowledgeBase.value = value;
   showKnowledgeBaseMenu.value = false;
-  
+  localStorage.setItem('selectedKnowledgeBase', value);
   // 可以在这里添加知识库切换后的逻辑
   console.log(`切换到${value}知识库`);
 };
@@ -283,7 +285,7 @@ async function onConversation3() {
 					stream: stream,
 					character: currentCharacter.value, // 添加性格类型
 					signal: controller.signal // 传入 signal 用于stream
-				});
+				}, currentKnowledgeBase.value);
 
 				function step(value?: any) {
 					const result = gen.next(value);
@@ -362,7 +364,7 @@ async function onConversation3() {
 				step();
 			}
 			else {
-				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream })
+				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream }, currentKnowledgeBase.value)
 				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
 				lastText += result
 			}

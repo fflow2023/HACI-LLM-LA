@@ -74,11 +74,11 @@ interface postParams {
   stream: boolean,
 }
 
-export const chatSiliconflow = (params: postParams) => {
+export const chatSiliconflow = (params: postParams, language: string) => {
   return remoteapi({
     base: 'siliconflow',
     kind: 'chat',
     methods: 'post',
     postparams: params,
-  })
+  }, language)
 }

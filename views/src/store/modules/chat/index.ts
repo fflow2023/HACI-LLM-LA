@@ -5,11 +5,16 @@ import { CharacterType } from '@/templates/characterPrompts'
 import { useAuthStore } from '../auth'
 import axios from '@/utils/request/axios'
 
-const characterInfo = {
-  strict: '严厉型（教师角色）',
-  encouraging: '鼓励型（教师角色）',
-  topStudent: '学霸领学型（同学角色）',
-  strugglingStudent: '学渣共同进步型（同学角色）'
+const characterInfo = 
+// {
+//   strict: '严厉型（教师角色）',
+//   encouraging: '鼓励型（教师角色）',
+//   topStudent: '学霸领学型（同学角色）',
+//   strugglingStudent: '学渣共同进步型（同学角色）'
+// }
+{
+  Japanese: '日语学习助手',
+  English:'英语学习助手'
 }
 
 export const useChatStore = defineStore('chat-store', {
@@ -40,7 +45,7 @@ export const useChatStore = defineStore('chat-store', {
     },
     currentCharacter(state): string {
       const activeHistory = state.history.find(h => h.uuid === state.active)
-      return activeHistory?.character || 'strict'
+      return activeHistory?.character || ' Japanese'
     },
   },
 
@@ -54,7 +59,7 @@ export const useChatStore = defineStore('chat-store', {
     addHistory(history: Chat.History, chatData: Chat.Chat[] = []) {
       const authStore = useAuthStore()
 
-      const character = history.character as CharacterType || 'strict'
+      const character = history.character as CharacterType || ' Japanese'
       const characterDescription = characterInfo[character] || '未知性格类型'
 
       // 添加用户信息到历史记录
@@ -219,7 +224,7 @@ export const useChatStore = defineStore('chat-store', {
       if (!uuid || uuid === 0) {
         if (this.history.length === 0) {
           const uuid = Date.now()
-          const character = 'strict' as CharacterType
+          const character = 'Japanese' as CharacterType
           const characterDescription = characterInfo[character]
 
           this.history.push({

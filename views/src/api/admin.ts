@@ -244,20 +244,16 @@ export async function fetchChatRecordCount(params: {
 }
 
 export interface CharacterStats {
-  strict: number
-  encouraging: number
-  topStudent: number
-  strugglingStudent: number
+  Japanese: number
+  English: number
   total: number
 }
 
 export async function getallCharacterStats(): Promise<{ data: CharacterStats; error?: string }> {
   const sql = `
     SELECT 
-      COUNT(CASE WHEN characterUsed = 'strict' THEN 1 END) as strict,
-      COUNT(CASE WHEN characterUsed = 'encouraging' THEN 1 END) as encouraging,
-      COUNT(CASE WHEN characterUsed = 'topStudent' THEN 1 END) as topStudent,
-      COUNT(CASE WHEN characterUsed = 'strugglingStudent' THEN 1 END) as strugglingStudent,
+      COUNT(CASE WHEN characterUsed = 'Japanese' THEN 1 END) as  Japanese,
+      COUNT(CASE WHEN characterUsed = 'English' THEN 1 END) as English,
       COUNT(*) as total
     FROM chat_records
   `
@@ -268,10 +264,8 @@ export async function getallCharacterStats(): Promise<{ data: CharacterStats; er
   const data = result.data?.[0] || {}
   return {
     data: {
-      strict: Number(data.strict) || 0,
-      encouraging: Number(data.encouraging) || 0,
-      topStudent: Number(data.topStudent) || 0,
-      strugglingStudent: Number(data.strugglingStudent) || 0,
+      Japanese: Number(data. Japanese) || 0,
+      English: Number(data.English) || 0,
       total: Number(data.total) || 0
     }
   }
@@ -288,10 +282,8 @@ export async function getCharacterStats(params: {
   
   const sql = `
     SELECT 
-      COUNT(CASE WHEN characterUsed = 'strict' THEN 1 END) as strict,
-      COUNT(CASE WHEN characterUsed = 'encouraging' THEN 1 END) as encouraging,
-      COUNT(CASE WHEN characterUsed = 'topStudent' THEN 1 END) as topStudent,
-      COUNT(CASE WHEN characterUsed = 'strugglingStudent' THEN 1 END) as strugglingStudent,
+      COUNT(CASE WHEN characterUsed = 'Japanese' THEN 1 END) as  Japanese,
+      COUNT(CASE WHEN characterUsed = 'English' THEN 1 END) as English,
       COUNT(*) as total
     FROM chat_records
     ${whereClause}
@@ -303,10 +295,8 @@ export async function getCharacterStats(params: {
   const data = result.data?.[0] || {}
   return {
     data: {
-      strict: Number(data.strict) || 0,
-      encouraging: Number(data.encouraging) || 0,
-      topStudent: Number(data.topStudent) || 0,
-      strugglingStudent: Number(data.strugglingStudent) || 0,
+      English: Number(data.English) || 0,
+      Japanese: Number(data. Japanese) || 0,
       total: Number(data.total) || 0
     }
   }

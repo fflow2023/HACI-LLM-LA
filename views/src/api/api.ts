@@ -55,7 +55,7 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	let historylist = getHistoryList(params['postparams']['history'])
 
 	// 获取性格类型
-	const character = postparams['character'] as CharacterType || 'strict'
+	const character = postparams['character'] as CharacterType || ' Japanese'
 	console.log('Selected character:', character) // 添加日志
 
 	const characterInfo = characterPrompts[character]
@@ -215,7 +215,7 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 	let historylist = getHistoryList(postparams['history'])
 
 	// 获取性格类型
-	const character = postparams['character'] as CharacterType || 'strict'
+	const character = postparams['character'] as CharacterType || ' Japanese'
 	console.log('Selected character:', character) // 添加日志
 
 	const characterInfo = characterPrompts[character]

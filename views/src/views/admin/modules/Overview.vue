@@ -70,10 +70,8 @@ const loading = ref(true)
 const error = ref('')
 
 const characterStats = ref({
-  strict: 0,
-  encouraging: 0,
-  topStudent: 0,
-  strugglingStudent: 0,
+  Japanese: 0,
+  English: 0,
   total: 0
 })
 const characterLoading = ref(true)
@@ -187,10 +185,8 @@ const updateChart = () => {
           show: false
         },
         data: [
-          { value: characterStats.value.strict, name: '严格型' },
-          { value: characterStats.value.encouraging, name: '鼓励型' },
-          { value: characterStats.value.topStudent, name: '学霸领学型' },
-          { value: characterStats.value.strugglingStudent, name: '学渣共同进步型' }
+          { value: characterStats.value.Japanese, name: '日语学习助手' },
+          { value: characterStats.value.ENglish, name: '英语教学助手' }
         ],
         color: ['#5470c6', '#91cc75', '#fac858', '#ee6666']
       }

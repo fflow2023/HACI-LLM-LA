@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { CharacterType } from '@/templates/characterPrompts'
 
 export function useCharacter() {
-  const currentCharacter = ref<CharacterType>('strict')
+  const currentCharacter = ref<CharacterType>('Japanese')
 
   function setCurrentCharacter(character: CharacterType) {
     currentCharacter.value = character

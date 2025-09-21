@@ -96,10 +96,8 @@ function exportData(): void {
 
   // 添加性格类型信息到导出数据
   const characterInfo = {
-    strict: '严厉型（教师角色）',
-    encouraging: '鼓励型（教师角色）',
-    topStudent: '学霸领学型（同学角色）',
-    strugglingStudent: '学渣共同进步型（同学角色）'
+    English: '英语教学助手',
+    Japanese: '日语教学助手'
   }
 
   // 为每个历史记录添加性格类型描述
@@ -117,11 +115,11 @@ function exportData(): void {
       const historyItem = parsedData.history.find((h: any) => h.uuid === chatItem.uuid)
       return {
         ...chatItem,
-        character: historyItem?.character || 'strict',
+        character: historyItem?.character || 'Japanese',
         characterDescription: historyItem?.characterDescription || '未知性格类型',
         data: chatItem.data.map((message: any) => ({
           ...message,
-          character: historyItem?.character || 'strict',
+          character: historyItem?.character || 'Japanese',
           characterDescription: historyItem?.characterDescription || '未知性格类型'
         }))
       }

@@ -1180,13 +1180,11 @@ const triggerFileInput = () => {
 
 const { currentCharacter, setCurrentCharacter } = useCharacter()
 
-// 性格选项
-// const characterOptions = [
-// 	{ label: '严厉型（教师角色）', value: 'strict' },
-// 	{ label: '鼓励型（教师角色）', value: 'encouraging' },
-// 	{ label: '学霸领学型（同学角色）', value: 'topStudent' },
-// 	{ label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' }
-// ]
+性格选项
+const characterOptions = [
+	{ label: '日语教学助手', value: 'Japanese' },
+	{ label: '英语教学助手', value: 'English' }
+]
 
 // 性格选择器相关
 const showCharacterSelector = ref(false)
@@ -1203,19 +1201,15 @@ const handleCharacterSelect = (character: CharacterType) => {
 
 // 性格选择器图标映射
 const characterIconMap = {
-	strict: 'ri:user-follow-line',
-	encouraging: 'ri:emotion-happy-line',
-	topStudent: 'ri:user-star-line',
-	strugglingStudent: 'ri:team-line'
+	Japanese: 'ri:user-follow-line',
+	English: 'ri:emotion-happy-line'
 }
 
 // 获取当前性格的名称
 const getCurrentCharacterName = computed(() => {
 	const characterMap = {
-		strict: '严厉型教师',
-		encouraging: '鼓励型教师',
-		topStudent: '学霸同学',
-		strugglingStudent: '奋斗同学'
+		Japanese: '日语教学助手',
+		English: '英语教学助手'
 	}
 	return currentCharacter.value ? characterMap[currentCharacter.value] : '请选择性格'
 })

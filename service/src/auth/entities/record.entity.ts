@@ -43,7 +43,7 @@ export class ChatRecord {
         type: 'varchar',
         length: 50,
         comment: '使用的教师角色',
-        default: 'strict'
+        default: ' Japanese'
     })
     characterUsed: string;
 

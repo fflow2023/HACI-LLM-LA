@@ -12,13 +12,11 @@ const emit = defineEmits<{
 	(e: 'select', character: CharacterType): void
 }>()
 
-const selectedCharacter = ref<CharacterType>('strict')
+const selectedCharacter = ref<CharacterType>('Japanese')
 
 const characterOptions = [
-	{ label: '严厉型（教师角色）', value: 'strict' as CharacterType, icon: 'ri:user-follow-line', description: '严格要求、督促学习进度' },
-	{ label: '鼓励型（教师角色）', value: 'encouraging' as CharacterType, icon: 'ri:emotion-happy-line', description: '积极鼓励、关注学习兴趣' },
-	{ label: '学霸领学型（同学角色）', value: 'topStudent' as CharacterType, icon: 'ri:user-star-line', description: '高水平引导、分享学习经验' },
-	{ label: '学渣共同进步型（同学角色）', value: 'strugglingStudent' as CharacterType, icon: 'ri:team-line', description: '奋斗共同进步、砥砺互相帮助' }
+	{ label: 'Japanese', value: 'Japanese' as CharacterType, icon: 'ri:user-follow-line', description: '严格要求、督促学习进度' },
+	{ label: 'English', value: 'English' as CharacterType, icon: 'ri:emotion-happy-line', description: '积极鼓励、关注学习兴趣' }
 ]
 
 function handleConfirm() {
@@ -64,9 +62,8 @@ function selectCharacter(value: CharacterType) {
 									<NIcon>
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 											<path
-												:d="option.value === 'strict' ? 'M10 15l-5-5 1.41-1.41L10 12.17l7.59-7.59L19 6l-9 9z' :
-													option.value === 'encouraging' ? 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' :
-														option.value === 'topStudent' ? 'M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z' :
+												:d="option.value === 'Japanese' ? 'M10 15l-5-5 1.41-1.41L10 12.17l7.59-7.59L19 6l-9 9z' :
+													option.value === 'English' ? 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' :
 															'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z'"
 												fill="currentColor"></path>
 										</svg>

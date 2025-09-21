@@ -88,10 +88,8 @@ function handleCancel() {
 // 获取性格描述的辅助函数
 function getCharacterDescription(character: CharacterType): string {
 	const characterMap = {
-		strict: '严厉型（教师角色）',
-		encouraging: '鼓励型（教师角色）',
-		topStudent: '学霸领学型（同学角色）',
-		strugglingStudent: '学渣共同进步型（同学角色）'
+		Japanese: '日语教学助手',
+		English: '英语教学助手'
 	}
 	return characterMap[character] || '未知性格类型'
 }

@@ -12,14 +12,14 @@ export function defaultState(): Chat.ChatState {
       uuid, 
       title: 'New Chat', 
       isEdit: false, 
-      character: 'strict' as CharacterType,
-      characterDescription: '严厉型（教师角色）'
+      character: 'Japanese' as CharacterType,
+      characterDescription: '日语教学助手'
     }],
     chat: [{ 
       uuid, 
       data: [],
-      character: 'strict' as CharacterType,
-      characterDescription: '严厉型（教师角色）'
+      character: 'English' as CharacterType,
+      characterDescription: '英语教学助手'
     }],
   }
 }

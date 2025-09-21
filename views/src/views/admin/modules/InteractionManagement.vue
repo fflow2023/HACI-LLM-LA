@@ -17,10 +17,8 @@
           <label>角色模式：</label>
           <select v-model="filterParams.characterUsed">
             <option value="">全部</option>
-            <option value="strict">严格型</option>
-            <option value="encouraging">鼓励型</option>
-            <option value="topStudent">学霸领学型</option>
-            <option value="strugglingStudent">学渣共同进步型</option>
+            <option value="English">英语教学助手</option>
+            <option value=" Japanese">日语教学助手</option>
           </select>
         </div>
       </div>
@@ -167,10 +165,8 @@ const currentContent = ref('')
 
 // 角色类型映射
 const roleMap = {
-  strict: '严格型',
-  encouraging: '鼓励型',
-  topStudent: '学霸领学型',
-  strugglingStudent: '学渣共同进步型'
+  Japanese: '日语教学助手',
+  English: '英语教学助手'
 }
 
 // 计算总页数
@@ -199,10 +195,8 @@ const showDetail = (content: string) => {
 
 
 const characterStats = ref<CharacterStats>({
-  strict: 0,
-  encouraging: 0,
-  topStudent: 0,
-  strugglingStudent: 0,
+  Japanese: 0,
+  English: 0,
   total: 0
 })
 // 加载数据
@@ -264,27 +258,17 @@ const handlePageChange = (page: number) => {
   loadData()
 }
 const roleStats = computed(() => {
-  const { strict, encouraging, topStudent, strugglingStudent, total } = characterStats.value
+  const {  Japanese,English } = characterStats.value
   return [
     { 
-      name: '严格型',
-      count: strict,
-      percent: total > 0 ? ((strict / total) * 100).toFixed(1) : '0.0'
+      name: '日语教学助手',
+      count: Japanese,
+      percent: total > 0 ? (( Japanese / total) * 100).toFixed(1) : '0.0'
     },
     { 
-      name: '鼓励型',
-      count: encouraging,
-      percent: total > 0 ? ((encouraging / total) * 100).toFixed(1) : '0.0'
-    },
-    { 
-      name: '学霸型',
-      count: topStudent,
-      percent: total > 0 ? ((topStudent / total) * 100).toFixed(1) : '0.0'
-    },
-    { 
-      name: '学渣型',
-      count: strugglingStudent,
-      percent: total > 0 ? ((strugglingStudent / total) * 100).toFixed(1) : '0.0'
+      name: '英语教学助手',
+      count: English,
+      percent: total > 0 ? ((English/ total) * 100).toFixed(1) : '0.0'
     }
   ]
 })

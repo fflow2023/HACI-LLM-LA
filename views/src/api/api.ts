@@ -3,15 +3,26 @@
 import request from './axios'
 import { getHistoryList } from './tools'
 import axios from 'axios';
-import { characterPrompts, CharacterType, RoleType } from '../templates/characterPrompts';
+import { characterPrompts, CharacterType, RoleType, LanguageType } from '../templates/characterPrompts';
 
 const { post } = axios;
 
-// 静态系统提示词
-const staticSystemPrompts = {
-	teacher: `你是一位在东北大学秦皇岛分校人工智能领域有着深厚学术造诣和丰富教学经验的专家，熟悉该分校的教学体系和学生的学习特点，能够为学生提供针对性的学习支持。你具备人工智能核心理论知识，包括机器学习、深度学习、自然语言处理等，同时掌握教学设计、学习策略制定和问题解决能力，能够结合实际案例进行讲解。为东北大学秦皇岛分校的学生提供专业的人工智能学习指导，帮助他们理解复杂概念，解决学习难题，提升学习效果，并培养他们的创新思维和实践能力。`,
-
-	student: `你是一位东北大学秦皇岛分校的学生，正在学习人工智能相关课程。你具备一定的编程基础和学习能力，对人工智能领域充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释复杂概念。你的目标是帮助其他同学更好地理解人工智能知识，共同进步。`
+// 静态系统提示词 - 根据语言类型和角色类型动态生成
+const getStaticSystemPrompt = (language: LanguageType, role: RoleType): string => {
+  if (language === '英语') {
+    if (role === 'teacher') {
+      return `你是一位在东北大学秦皇岛分校英语教学领域有着深厚学术造诣和丰富教学经验的专家，熟悉该分校的教学体系和学生的学习特点，能够为学生提供针对性的英语学习支持。你具备扎实的英语语言学知识，包括语法、词汇、发音、听力、口语、阅读、写作等各个方面，同时掌握英语教学设计、学习策略制定和问题解决能力，能够结合实际案例进行讲解。为东北大学秦皇岛分校的学生提供专业的英语学习指导，帮助他们理解复杂概念，解决学习难题，提升学习效果，并培养他们的英语思维和跨文化交流能力。`;
+    } else {
+      return `你是一位东北大学秦皇岛分校的学生，正在学习英语相关课程。你具备一定的英语基础和学习能力，对英语学习充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释复杂概念。你的目标是帮助其他同学更好地理解英语知识，共同进步。`;
+    }
+  } else if (language === '日语') {
+    if (role === 'teacher') {
+      return `你是一位在东北大学秦皇岛分校日语教学领域有着深厚学术造诣和丰富教学经验的专家，熟悉该分校的教学体系和学生的学习特点，能够为学生提供针对性的日语学习支持。你具备扎实的日语语言学知识，包括假名、汉字、语法、词汇、敬语、文化背景等各个方面，同时掌握日语教学设计、学习策略制定和问题解决能力，能够结合实际案例进行讲解。为东北大学秦皇岛分校的学生提供专业的日语学习指导，帮助他们理解复杂概念，解决学习难题，提升学习效果，并培养他们的日语交流能力和跨文化理解。`;
+    } else {
+      return `你是一位东北大学秦皇岛分校的学生，正在学习日语相关课程。你具备一定的日语基础和学习能力，对日语学习充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释复杂概念。你的目标是帮助其他同学更好地理解日语知识，共同进步。`;
+    }
+  }
+  return '';
 };
 
 export const api = async (data: object): Promise<any> => {
@@ -55,14 +66,14 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 	let historylist = getHistoryList(params['postparams']['history'])
 
 	// 获取性格类型
-	const character = postparams['character'] as CharacterType || 'strict'
+	const character = postparams['character'] as CharacterType || '英语-严厉型'
 	console.log('Selected character:', character) // 添加日志
 
 	const characterInfo = characterPrompts[character]
 	console.log('Character info:', characterInfo) // 添加日志
 
 	// 获取静态系统提示词
-	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	const staticSystemPrompt = getStaticSystemPrompt(characterInfo.language, characterInfo.role)
 	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
 
 	// 获取动态性格提示词
@@ -98,131 +109,39 @@ export const remoteapi = async (params: remoteapiParams): Promise<any> => {
 		};
 
 		console.log(stream)
-		if (!stream) {
-			const res = await fetch('https://api.siliconflow.cn/v1/chat/completions', options)
-				.then(response => response.json())
-				.then(response => {
-					// Assuming you want to extract the content of the response message
-					return response.choices[0].message.content;
-				})
-				.catch(err => {
-					console.error(err);
-					return null;  // In case of an error, return null or handle appropriately
-				});
-			return res
+		if (stream) {
+			const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', options);
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			return response;
 		} else {
-			// TODO: 还没完成流式生成的代码修改
-			// 这里不是很好改，想用生成器去做，感觉如果写成异步生成器会很乱，暂时先写了一个生成器函数解决
-			// 所以下面是的代码目前都没有用，之后可以的话，把它改成异步生成器，统一接口
-			post('https://api.siliconflow.cn/v1/chat/completions', {
-				...options,
-				responseType: 'stream'
-			})
-				.then(response => {
-					let firstReasoningContentOutput = true;
-					let firstContentOutput = true;
-
-					// 流式处理响应数据
-					response.data.on('data', (chunk: string) => {
-						const chunkStr = chunk.toString().trim();
-
-						if (chunkStr.startsWith('data:')) {
-							let dataStr = chunkStr.slice(6).trim(); // 去除"data:"前缀和之后的空格
-							if (dataStr === "[DONE]") {
-								console.log("\n\n============[DONE]============\n");
-								return;
-							}
-
-							try {
-								// 解析 JSON 数据
-								const chunkJson = JSON.parse(dataStr);
-								if (chunkJson.choices && Array.isArray(chunkJson.choices) && chunkJson.choices.length > 0) {
-									const choice = chunkJson.choices[0];
-									const delta = choice.delta || {};
-
-									// 获取思考过程信息
-									const reasoningContent = delta.reasoning_content;
-									// 获取结果内容
-									const content = delta.content;
-									// 获取完成原因
-									const finishReason = choice.finish_reason;
-
-									if (finishReason) {
-										console.log("\n\n\n==>查看结束原因，如果是stop，表示是正常结束的。finish_reason =", finishReason);
-									}
-
-									// 打印思考过程：reasoning_content（如果有）
-									if (reasoningContent !== null) {
-										if (firstReasoningContentOutput) {
-											console.log("思考过程:");
-											firstReasoningContentOutput = false;
-										}
-										process.stdout.write(reasoningContent);
-									}
-
-									// 打印结果内容：content（如果有）
-									if (content !== null) {
-										if (firstContentOutput) {
-											console.log("\n\n==============================\n结果:");
-											firstContentOutput = false;
-										}
-										process.stdout.write(content);
-									}
-								}
-							} catch (error) {
-								console.error(`JSON解码错误: ${error}`);
-							}
-						}
-					});
-				})
-				.catch(error => {
-					console.error(`请求失败，错误信息: ${error}`);
-				});
+			const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', options);
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			const data = await response.json();
+			return data;
 		}
 	}
 }
 
-
-
-
-
-
-interface Delta {
-	reasoning_content: string | null;
-	content: string | null;
-}
-
-interface Choice {
-	delta?: Delta;
-	finish_reason?: string;
-}
-
-interface ChunkJson {
-	choices: Choice[];
-}
-
-// 修改fetchStreamData函数
 export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal }) {
-	// 添加 abort 信号监听
-	if (postparams.signal) {
-		postparams.signal.addEventListener('abort', () => {
-			console.log('Stream aborted by controller')
-			reader?.cancel() // 主动取消流式读取
-		})
-	}
-
+	let kind = 'chat'
+	let base = 'siliconflow'
+	let methods = 'post'
 	let stream = postparams['stream']
 	let historylist = getHistoryList(postparams['history'])
 
 	// 获取性格类型
-	const character = postparams['character'] as CharacterType || 'strict'
+	const character = postparams['character'] as CharacterType || '英语-严厉型'
 	console.log('Selected character:', character) // 添加日志
 
 	const characterInfo = characterPrompts[character]
 	console.log('Character info:', characterInfo) // 添加日志
 
 	// 获取静态系统提示词
-	const staticSystemPrompt = staticSystemPrompts[characterInfo.role]
+	const staticSystemPrompt = getStaticSystemPrompt(characterInfo.language, characterInfo.role)
 	console.log('Static system prompt:', staticSystemPrompt) // 添加日志
 
 	// 获取动态性格提示词
@@ -236,107 +155,75 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
 	let userinput = [{ content: postparams['message'], role: 'user' }]
 
+	// 目前暂时只实现一种情况
+	if (base == 'siliconflow' && kind == 'chat' && methods == 'post') {
+		const options = {
+			method: 'POST',
+			headers: {
+				Authorization: 'Bearer ' + import.meta.env.VITE_SILICONFLOW_API_KEY,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				model: import.meta.env.VITE_SILICONFLOW_MODEL,
+				stream: stream,
+				max_tokens: max_tokens_base[import.meta.env.VITE_SILICONFLOW_MODEL] || 4096,
+				temperature: 0.7,
+				top_p: 0.7,
+				top_k: 50,
+				frequency_penalty: 0.5,
+				n: 1,
+				messages: systempormpt.concat(historylist, userinput)
+			})
+		};
 
+		console.log(stream)
+		if (stream) {
+			const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', options, { signal: postparams.signal });
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			const reader = response.body?.getReader();
+			if (!reader) {
+				throw new Error('No reader available');
+			}
 
-	// fetch 的返回类型为 Response
-	const response: Response = yield fetch('https://api.siliconflow.cn/v1/chat/completions', {
-		method: 'POST',
-		headers: {
-			Authorization: 'Bearer ' + import.meta.env.VITE_SILICONFLOW_API_KEY,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			model: import.meta.env.VITE_SILICONFLOW_MODEL,
-			stream: stream,
-			max_tokens: max_tokens_base[import.meta.env.VITE_SILICONFLOW_MODEL] || 4096,
-			temperature: 0.7,
-			top_p: 0.7,
-			top_k: 50,
-			frequency_penalty: 0.5,
-			n: 1,
-			messages: systempormpt.concat(historylist, userinput)
-		})
-	});
+			const decoder = new TextDecoder();
+			let buffer = '';
 
-	const reader = response.body?.getReader();  // `body` 可能是 null
-	if (!reader) {
-		console.error('Failed to get reader from response body');
-		return;
-	}
+			try {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
 
-	const decoder = new TextDecoder();
-	let done: boolean = false, value: Uint8Array;
+					buffer += decoder.decode(value, { stream: true });
+					const lines = buffer.split('\n');
+					buffer = lines.pop() || '';
 
-	while (!done) {
-		// 暂停执行，等待外部继续
-		({ done, value } = yield reader.read());
-		const strs = decoder.decode(value, { stream: true }).trim();
-
-		const chunkStrs = strs.split('data:');
-
-		for (let chunkStr of chunkStrs) {
-			if (chunkStr.trim()) {
-				let dataStr = chunkStr.trim();
-				if (dataStr === "[DONE]") {
-					// console.log("\n\n============[DONE]============\n");
-					return;
-				}
-
-				try {
-					const chunkJson: ChunkJson = JSON.parse(dataStr);
-					if (chunkJson.choices && Array.isArray(chunkJson.choices) && chunkJson.choices.length > 0) {
-						const choice = chunkJson.choices[0];
-						const delta: Delta = choice.delta ?? { reasoning_content: null, content: null };  // 使用空值合并操作符
-
-
-						const reasoningContent: string | null = delta.reasoning_content;
-						const content: string | null = delta.content;
-						// const finishReason: string | undefined = choice.finish_reason;
-
-						// if (finishReason) {
-						// 	console.log("\n\n\n==>查看结束原因，如果是stop，表示是正常结束的。finish_reason =", finishReason);
-						// }
-
-						// 每次读取到数据后，yield 出 reasoningContent 或 content
-						if (reasoningContent !== null) {
-							yield reasoningContent;  // 返回同步数据
-						}
-
-						if (content !== null) {
-							yield content;  // 返回同步数据
+					for (const line of lines) {
+						if (line.startsWith('data: ')) {
+							const data = line.slice(6);
+							if (data === '[DONE]') {
+								return;
+							}
+							try {
+								const parsed = JSON.parse(data);
+								yield parsed;
+							} catch (e) {
+								console.error('Error parsing JSON:', e);
+							}
 						}
 					}
-				} catch (error) {
-					console.log(chunkStr)
-					console.error(`JSON解码错误: ${error}`);
 				}
+			} finally {
+				reader.releaseLock();
 			}
+		} else {
+			const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', options, { signal: postparams.signal });
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			const data = await response.json();
+			yield data;
 		}
-
 	}
 }
-
-
-
-/*
-	const gen = fetchStreamData(params);
-
-	function step(value?: any) {
-		const result = gen.next(value);
-
-		if (!result.done) {
-			// 检查 result.value 是否为 Promise，若是则等待其完成，否则直接打印
-			if (result.value instanceof Promise) {
-				result.value.then(data => step(data)).catch(err => gen.throw(err));
-			} else {
-				// 如果是同步数据，直接打印
-				process.stdout.write(result.value);
-				step(); // 继续执行生成器
-			}
-		}
-	}
-
-	step();
-
-
-*/

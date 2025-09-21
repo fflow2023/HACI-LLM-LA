@@ -22,41 +22,36 @@ import { useCharacter } from '@/hooks/useCharacter'
 import { CharacterType } from '@/templates/characterPrompts'
 import CharacterSelector from './components/CharacterSelector.vue'
 let controller = new AbortController()
-// 八种风格配置
-const styleOptions = [
-  { label: "英语-严厉型教师", value: "英语-严厉型", icon: "twemoji:flag-united-kingdom", role: "teacher" },
-  { label: "英语-鼓励型教师", value: "英语-鼓励型", icon: "twemoji:flag-united-kingdom", role: "teacher" },
-  { label: "英语-学霸同学", value: "英语-学霸型", icon: "twemoji:flag-united-kingdom", role: "student" },
-  { label: "英语-奋斗同学", value: "英语-学渣型", icon: "twemoji:flag-united-kingdom", role: "student" },
-  { label: "日语-严厉型教师", value: "日语-严厉型", icon: "twemoji:flag-japan", role: "teacher" },
-  { label: "日语-鼓励型教师", value: "日语-鼓励型", icon: "twemoji:flag-japan", role: "teacher" },
-  { label: "日语-学霸同学", value: "日语-学霸型", icon: "twemoji:flag-japan", role: "student" },
-  { label: "日语-奋斗同学", value: "日语-学渣型", icon: "twemoji:flag-japan", role: "student" }
+
+// ✅ 知识库配置
+type KnowledgeBaseType = '英语' | '日语'; type StyleType = '英语-严厉型' | '英语-鼓励型' | '英语-学霸型' | '英语-学渣型' | '日语-严厉型' | '日语-鼓励型' | '日语-学霸型' | '日语-学渣型';
+const knowledgeBases = [
+  { 
+    label: '英语学习助手', 
+    value: '英语' as KnowledgeBaseType,
+    icon: 'twemoji:flag-united-kingdom'
+  },
+  { 
+    label: '日语学习助手', 
+    value: '日语' as KnowledgeBaseType,
+    icon: 'twemoji:flag-japan'
+  }
 ];
 
-// 当前风格状态
-const currentStyle = ref<CharacterType>("英语-严厉型"); // 默认选择英语严厉型
-const showStyleMenu = ref(false); // 控制菜单显示
+// 当前知识库状态（指定类型）
+const currentKnowledgeBase = ref<KnowledgeBaseType>('英语'); // 默认选择英语
+const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
 
-// 选择风格
-const selectStyle = (value: CharacterType) => {
-  currentStyle.value = value;
-  showStyleMenu.value = false;
-  setCurrentCharacter(value);
-  
-  // 更新历史记录
-  if (uuid) {
-    chatStore.updateHistory(Number(uuid), { character: value });
-  }
-  
-  console.log(`切换到${value}风格`);
-};  showKnowledgeBaseMenu.value = false;
+// 选择知识库（添加类型注解）
+const selectKnowledgeBase = (value: KnowledgeBaseType) => {
+  currentKnowledgeBase.value = value;
+  showKnowledgeBaseMenu.value = false;
   
   // 可以在这里添加知识库切换后的逻辑
   console.log(`切换到${value}知识库`);
 };
 
-// 以下为文本编辑器相关内容
+// 以下为文本编辑器相关内容👇
 {
 	// const templates = ref<Array<{ name: string, prompt: string, preview: string, }>>([])
 
@@ -235,7 +230,7 @@ async function onConversation3() {
 			requestOptions: {
 				prompt: message,
 				options: { ...options },
-				character: currentStyle.value // 添加性格类型
+				character: currentCharacter.value // 添加性格类型
 			},
 		},
 	)
@@ -261,7 +256,7 @@ async function onConversation3() {
 					try {
 						documentContent = await chatfileContent({
 							message: message,
-							knowledgeBase: currentStyle.value.split("-")[0], // 添加知识库参数
+							knowledgeBase: currentKnowledgeBase.value, // 添加知识库参数
 							hyperparameters: {
 								document_number: 2,
 							}
@@ -286,7 +281,7 @@ async function onConversation3() {
 					message: message,
 					history: history.value,
 					stream: stream,
-					character: currentStyle.value, // 添加性格类型
+					character: currentCharacter.value, // 添加性格类型
 					signal: controller.signal // 传入 signal 用于stream
 				});
 
@@ -332,14 +327,14 @@ async function onConversation3() {
 						//     requestOptions: {
 						//       prompt: message,
 						//       options: { ...options },
-						//       character: currentStyle.value
+						//       character: currentCharacter.value
 						//     }
 						//   })
 						// }
 
 						const mapKnowledgeBaseForDb = (): 'none' | 'english' | 'japanese' => {
 							if (!active.value) return 'none'; // 知识库关闭 → none
-							return currentStyle.value.split("-")[0] === '英语' ? 'english' : 'japanese';
+							return currentKnowledgeBase.value === '英语' ? 'english' : 'japanese';
 						};
 
 						// 在保存逻辑部分修改为：
@@ -357,7 +352,7 @@ async function onConversation3() {
 								requestOptions: {
 									prompt: userMessage, // 同步修正prompt字段
 									options: { ...options },
-									character: currentStyle.value,
+									character: currentCharacter.value,
 									knowledgeBase: mapKnowledgeBaseForDb()
 								}
 							})
@@ -1035,7 +1030,7 @@ const renderOption = (option: { label: string }) => {
 }
 
 const placeholder = computed(() => {
-	if (!currentStyle.value) return '请先选择风格模板后再输入问题';
+	if (!currentCharacter.value) return '请先选择性格模板后再输入问题';
 	if (isMobile.value)
 		return t('chat.placeholderMobile')
 	return t('chat.placeholder')
@@ -1044,7 +1039,7 @@ const placeholder = computed(() => {
 // 修改buttonDisabled计算属性
 const buttonDisabled = computed(() => {
 	const hasUnparsed = fileList.value.some(item => !item.parsed)
-	return loading.value || !prompt.value || prompt.value.trim() === '' || hasUnparsed || !currentStyle.value
+	return loading.value || !prompt.value || prompt.value.trim() === '' || hasUnparsed || !currentCharacter.value
 })
 const footerClass = computed(() => {
 	let classes = ['p-4']
@@ -1062,8 +1057,8 @@ onMounted(() => {
 	const currentChat = chatStore.history.find(h => h.uuid === Number(uuid))
 	if (currentChat && currentChat.character) {
 		// 同步性格状态
-		setCurrentCharacter(currentChat.character as CharacterType); currentStyle.value = currentChat.character as CharacterType
-	} else if (!currentStyle.value) {
+		setCurrentCharacter(currentChat.character as CharacterType)
+	} else if (!currentCharacter.value) {
 		// 如果没有选择性格，自动打开选择器
 		showCharacterSelector.value = true
 	}
@@ -1077,7 +1072,7 @@ watch(
 			const history = chatStore.history.find(h => h.uuid === Number(newUuid))
 			if (history && history.character) {
 				// 同步性格状态
-				setCurrentCharacter(history.character as CharacterType); currentStyle.value = history.character as CharacterType
+				setCurrentCharacter(history.character as CharacterType)
 			}
 		}
 	}
@@ -1232,7 +1227,7 @@ const { currentCharacter, setCurrentCharacter } = useCharacter()
 // 性格选择器相关
 const showCharacterSelector = ref(false)
 // 判断是否已选择性格
-const hasSelectedCharacter = computed(() => !!currentStyle.value)
+const hasSelectedCharacter = computed(() => !!currentCharacter.value)
 
 // 处理性格选择确认
 const handleCharacterSelect = (character: CharacterType) => {
@@ -1246,22 +1241,19 @@ const handleCharacterSelect = (character: CharacterType) => {
 const characterIconMap = {
 	strict: 'ri:user-follow-line',
 	encouraging: 'ri:emotion-happy-line',
-// 风格选择器图标映射
-const styleIconMap = {
-	"英语-严厉型": "ri:user-follow-line",
-	"英语-鼓励型": "ri:emotion-happy-line",
-	"英语-学霸型": "ri:user-star-line",
-	"英语-学渣型": "ri:team-line",
-	"日语-严厉型": "ri:user-follow-line",
-	"日语-鼓励型": "ri:emotion-happy-line",
-	"日语-学霸型": "ri:user-star-line",
-	"日语-学渣型": "ri:team-line"
+	topStudent: 'ri:user-star-line',
+	strugglingStudent: 'ri:team-line'
 }
 
-// 获取当前风格的名称
-const getCurrentStyleName = computed(() => {
-	return currentStyle.value ? styleOptions.find(opt => opt.value === currentStyle.value)?.label || "请选择风格" : "请选择风格"
-})	return currentStyle.value ? characterMap[currentStyle.value] : '请选择风格'
+// 获取当前性格的名称
+const getCurrentCharacterName = computed(() => {
+	const characterMap = {
+		strict: '严厉型教师',
+		encouraging: '鼓励型教师',
+		topStudent: '学霸同学',
+		strugglingStudent: '奋斗同学'
+	}
+	return currentCharacter.value ? characterMap[currentCharacter.value] : '请选择性格'
 })
 
 </script>
@@ -1277,15 +1269,21 @@ const getCurrentStyleName = computed(() => {
 				<div class="flex items-center space-x-2">
 					<h1 class="text-lg font-medium text-gray-800 dark:text-gray-200">智能学习助手</h1>
 					<div v-if="!hasSelectedCharacter"
-					<!-- 风格选择器 -->
+						class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+						请选择性格
+					</div>
+				</div>
+
+				<div class="flex items-center space-x-3">
+					<!-- 语言知识库选择器 -->
 					<div class="relative">
-						<button @click.stop="showStyleMenu = !showStyleMenu"
+						<button @click.stop="showKnowledgeBaseMenu = !showKnowledgeBaseMenu"
 							class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors border border-indigo-200 dark:border-gray-600">
-							<SvgIcon :icon="currentStyle ? styleIconMap[currentStyle] : 'ri:user-line'" class="text-indigo-600 dark:text-indigo-400" />
+							<SvgIcon icon="ri:translate-2" class="text-indigo-600 dark:text-indigo-400" />
 							<span class="text-sm text-gray-700 dark:text-gray-300">
-								{{ getCurrentStyleName }}
+								{{knowledgeBases.find(kb => kb.value === currentKnowledgeBase)?.label || '语言助手'}}
 							</span>
-							<SvgIcon :icon="showStyleMenu ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
+							<SvgIcon :icon="showKnowledgeBaseMenu ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
 								class="text-xs text-gray-500 transition-transform" />
 						</button>
 
@@ -1296,23 +1294,43 @@ const getCurrentStyleName = computed(() => {
 							leave-active-class="transition duration-150 ease-in"
 							leave-from-class="transform opacity-100 scale-100"
 							leave-to-class="transform opacity-0 scale-95 translate-y-1">
-							<div v-show="showStyleMenu"
-								class="absolute z-10 mt-1 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-right right-0 max-h-80 overflow-y-auto">
+							<div v-show="showKnowledgeBaseMenu"
+								class="absolute z-10 mt-1 w-44 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-right right-0">
 								<div class="py-1">
-									<template v-for="style in styleOptions" :key="style.value">
-										<button @click="selectStyle(style.value)" :class="{
-											"bg-gray-100 dark:bg-gray-700": currentStyle === style.value,
-											"text-indigo-700 dark:text-indigo-300": currentStyle === style.value
+									<template v-for="kb in knowledgeBases" :key="kb.value">
+										<button @click="selectKnowledgeBase(kb.value)" :class="{
+											'bg-gray-100 dark:bg-gray-700': currentKnowledgeBase === kb.value,
+											'text-indigo-700 dark:text-indigo-300': currentKnowledgeBase === kb.value
 										}" class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-											<SvgIcon :icon="style.icon" class="mr-2 w-5 h-5" />
-											<span>{{ style.label }}</span>
-											<SvgIcon v-if="currentStyle === style.value" icon="ri:check-line"
+											<SvgIcon
+												:icon="kb.value === '英语' ? 'twemoji:flag-united-kingdom' : 'twemoji:flag-japan'"
+												class="mr-2 w-5 h-5" />
+											<span>{{ kb.label }}</span>
+											<SvgIcon v-if="currentKnowledgeBase === kb.value" icon="ri:check-line"
 												class="ml-auto text-indigo-500 dark:text-indigo-400" />
 										</button>
 									</template>
 								</div>
 							</div>
+						</transition>
 					</div>
+					<!-- 性格切换按钮 - 美化版 -->
+					<NTooltip trigger="hover" placement="bottom">
+						<template #trigger>
+							<button @click="showCharacterSelector = true"
+								class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-green-50 hover:bg-green-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors border border-green-200 dark:border-gray-600">
+								<span class="flex items-center text-green-600 dark:text-green-400">
+									<SvgIcon
+										:icon="currentCharacter ? characterIconMap[currentCharacter] : 'ri:user-line'" />
+								</span>
+								<span class="text-sm text-gray-700 dark:text-gray-300">{{ getCurrentCharacterName
+								}}</span>
+								<SvgIcon icon="ri:arrow-down-s-line" class="text-xs text-gray-500" />
+							</button>
+						</template>
+						<span>切换AI助手性格</span>
+					</NTooltip>
+
 					<!-- 上下文开关 -->
 					<NTooltip trigger="hover" placement="bottom">
 						<template #trigger>

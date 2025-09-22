@@ -38,6 +38,7 @@ type MaxTokensBase = {
 };
 
 let max_tokens_base: MaxTokensBase = {
+	"deepseek-ai/DeepSeek-V3.1": 4096,
 	"deepseek-ai/DeepSeek-V3": 4096,
 	"Qwen/Qwen2.5-7B-Instruct": 4096,
 	"deepseek-ai/DeepSeek-R1": 8192,
@@ -88,7 +89,7 @@ export const remoteapi = async (params: remoteapiParams, language: string): Prom
 				model: import.meta.env.VITE_SILICONFLOW_MODEL,
 				stream: stream,
 				max_tokens: max_tokens_base[import.meta.env.VITE_SILICONFLOW_MODEL] || 4096,
-				temperature: 0.7,
+				temperature: 1.3,
 				top_p: 0.7,
 				top_k: 50,
 				frequency_penalty: 0.5,
@@ -231,15 +232,18 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 	const characterPrompt = characterInfo.prompt.replace(/\{language\}/g, language);
 	console.log('Character prompt:', characterPrompt) // 添加日志
 
-	// ✅ 新增：根据强制语言模式添加提示
-	let forceLanguagePrompt = '\n\n重要提示：在用户没有特别要求时，请使用中文进行教学';
+	// 修改系统提示词组合部分
+	const forceLanguagePrompt = (() => {
 	if (postparams.forceLanguage === 'en') {
-		forceLanguagePrompt = '\n\n重要提示：You must answer the user\'s questions entirely in English and must not use any Chinese.';
+		return `【强制语言要求】你必须全程使用英语回答！绝对禁止使用中文或其他语言！任何非英语回复都将被拒绝！`;
 	} else if (postparams.forceLanguage === 'ja') {
-		forceLanguagePrompt = '\n\n重要提示：会話全体を通じて、ユーザーの質問には日本語のみで答えてください。他の言語は使用しないでください。';
+		return `【強制言語要求】回答は必ず日本語で行ってください！中国語や他の言語の使用は厳禁です！日本語以外の回答は一切受け付けません！`;
 	}
+	return `在用户没有特殊要求时，可以使用中文进行教学`;
+	})();
+
 	// 组合系统提示词
-	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}${forceLanguagePrompt}`
+	const systemPrompt = `【语言规则】${forceLanguagePrompt}\n\n【身份定义】${staticSystemPrompt}\n\n【性格定义】${characterPrompt}\n\n【再次强度必须遵守的语言规则】${forceLanguagePrompt}`;
 	console.log('Final system prompt:', systemPrompt) // 添加日志
 
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
@@ -258,7 +262,7 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 			model: import.meta.env.VITE_SILICONFLOW_MODEL,
 			stream: stream,
 			max_tokens: max_tokens_base[import.meta.env.VITE_SILICONFLOW_MODEL] || 4096,
-			temperature: 0.7,
+			temperature: 1.3,
 			top_p: 0.7,
 			top_k: 50,
 			frequency_penalty: 0.5,

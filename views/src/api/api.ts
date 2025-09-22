@@ -93,7 +93,6 @@ export const remoteapi = async (params: remoteapiParams, language: string): Prom
 				top_p: 0.7,
 				top_k: 50,
 				frequency_penalty: 0.5,
-				enable_thinking:false,
 				n: 1,
 				messages: systempormpt.concat(historylist, userinput)
 			})
@@ -267,7 +266,6 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 			top_k: 50,
 			frequency_penalty: 0.5,
 			n: 1,
-			enable_thinking:false,
 			messages: systempormpt.concat(historylist, userinput)
 		})
 	});

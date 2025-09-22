@@ -43,6 +43,26 @@
         </div>
       </div>
 
+      <!-- 语言学习占比卡片 -->
+      <div class="stat-card">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75l1.12 3h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <div class="chart-container">
+            <div ref="languageChartRef" style="width: 100%; height: 150px;"></div>
+          </div>
+          <div class="stat-title">语言学习占比(英语/日语)</div>
+        </div>
+        <div v-if="characterError" class="error-tip">
+          <span>⚠️ 数据加载失败</span>
+          <button @click="loadCharacterStats" class="retry-btn">重试</button>
+        </div>
+      </div>
+
       <!-- 可扩展的其他统计卡片 -->
       <div class="stat-card coming-soon">
         <div class="card-icon">
@@ -74,12 +94,16 @@ const characterStats = ref({
   encouraging: 0,
   topStudent: 0,
   strugglingStudent: 0,
+  english: 0,
+  japanese: 0,
   total: 0
 })
 const characterLoading = ref(true)
 const characterError = ref('')
 const chartRef = ref<HTMLElement | null>(null)
+const languageChartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
+let languageChartInstance: echarts.ECharts | null = null
 
 const loadData = async () => {
   try {
@@ -110,6 +134,7 @@ const loadCharacterStats = async () => {
 
     // 更新图表
     updateChart()
+    updateLanguageChart()
 
   } catch (err) {
     characterError.value = err instanceof Error ? err.message : '数据加载失败'
@@ -210,10 +235,93 @@ const updateChart = () => {
   chartInstance.setOption(option)
 }
 
+const updateLanguageChart = () => {
+  if (!languageChartRef.value) return
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: 10,
+      top: 'center',
+      itemGap: 8,
+      itemWidth: 12,
+      itemHeight: 12,
+      textStyle: {
+        fontSize: 12,
+        lineHeight: 16
+      },
+      data: [
+        {
+          name: '英语学习',
+          icon: 'circle',
+          itemStyle: { color: '#5470c6' }
+        },
+        {
+          name: '日语学习',
+          icon: 'circle',
+          itemStyle: { color: '#ee6666' }
+        }
+      ]
+    },
+    series: [
+      {
+        name: '语言学习占比',
+        type: 'pie',
+        radius: ['40%', '60%'],
+        center: ['40%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: false,
+          position: 'center'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: '14',
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: false
+        },
+        data: [
+          { value: characterStats.value.english, name: '英语学习' },
+          { value: characterStats.value.japanese, name: '日语学习' }
+        ],
+        color: ['#5470c6', '#ee6666']
+      }
+    ],
+    grid: {
+      left: 0,
+      right: '35%',
+      top: 10,
+      bottom: 30
+    }
+  }
+
+  if (!languageChartInstance) {
+    languageChartInstance = echarts.init(languageChartRef.value)
+  }
+
+  languageChartInstance.setOption(option)
+}
+
 // 响应式调整图表大小
 const resizeChart = () => {
   if (chartInstance) {
     chartInstance.resize()
+  }
+  if (languageChartInstance) {
+    languageChartInstance.resize()
   }
 }
 
@@ -230,6 +338,10 @@ onBeforeUnmount(() => {
   if (chartInstance) {
     chartInstance.dispose()
     chartInstance = null
+  }
+  if (languageChartInstance) {
+    languageChartInstance.dispose()
+    languageChartInstance = null
   }
   window.removeEventListener('resize', resizeChart)
 })

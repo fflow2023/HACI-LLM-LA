@@ -1,3 +1,4 @@
+//views\src\views\chat\index.vue
 <script setup lang='ts'>
 import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -24,7 +25,8 @@ import CharacterSelector from './components/CharacterSelector.vue'
 let controller = new AbortController()
 
 // ✅ 知识库配置
-type KnowledgeBaseType = '英语' | '日语';
+type KnowledgeBaseType = '英语' | '日语' | '全英语' | '全日语';
+// ✅ 更新知识库选项，添加全英文和全日语
 const knowledgeBases = [
   { 
     label: '英语学习助手', 
@@ -35,6 +37,16 @@ const knowledgeBases = [
     label: '日语学习助手', 
     value: '日语' as KnowledgeBaseType,
     icon: 'twemoji:flag-japan'
+  },
+  { 
+    label: '全英语对话', 
+    value: '全英语' as KnowledgeBaseType,
+    icon: 'twemoji:flag-united-kingdom'
+  },
+  { 
+    label: '全日语对话', 
+    value: '全日语' as KnowledgeBaseType,
+    icon: 'twemoji:flag-japan'
   }
 ];
 
@@ -42,15 +54,42 @@ const knowledgeBases = [
 const currentKnowledgeBase = ref<KnowledgeBaseType>(
   (localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
 );
+// ✅ 新增：计算实际知识库类型（用于API调用）
+const actualKnowledgeBase = computed(() => {
+  if (currentKnowledgeBase.value === '全英语') return '英语';
+  if (currentKnowledgeBase.value === '全日语') return '日语';
+  return currentKnowledgeBase.value;
+});
+
+// ✅ 新增：计算强制语言模式
+const forceLanguageMode = computed(() => {
+  if (currentKnowledgeBase.value === '全英语') return 'en';
+  if (currentKnowledgeBase.value === '全日语') return 'ja';
+  return 'cn';
+});
+
 const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
 
-// 选择知识库（添加类型注解）
 const selectKnowledgeBase = (value: KnowledgeBaseType) => {
   currentKnowledgeBase.value = value;
   showKnowledgeBaseMenu.value = false;
   localStorage.setItem('selectedKnowledgeBase', value);
-  // 可以在这里添加知识库切换后的逻辑
-  console.log(`切换到${value}知识库`);
+  
+  // ✅ 新增：根据模式显示提示
+  if(value==='英语'){
+    ms.info('已切换到英语学习助手模式');
+  }
+  if(value==='日语'){
+    ms.info('已切换到日语学习助手模式');
+  }
+  if (value === '全英语') {
+    ms.info('已切换到全英语模式，AI将全程使用英文回答');
+  }
+  if (value === '全日语') {
+    ms.info('已切换到全日语模式，AI将全程使用日语回答');
+  }
+// 可以在这里添加知识库切换后的逻辑
+  console.log(`切换到${ actualKnowledgeBase.value}知识库`);
 };
 
 // 以下为文本编辑器相关内容👇
@@ -258,7 +297,7 @@ async function onConversation3() {
 					try {
 						documentContent = await chatfileContent({
 							message: message,
-							knowledgeBase: currentKnowledgeBase.value, // 添加知识库参数
+							knowledgeBase: actualKnowledgeBase.value,  // 添加知识库参数
 							hyperparameters: {
 								document_number: 2,
 							}
@@ -284,8 +323,9 @@ async function onConversation3() {
 					history: history.value,
 					stream: stream,
 					character: currentCharacter.value, // 添加性格类型
-					signal: controller.signal // 传入 signal 用于stream
-				}, currentKnowledgeBase.value);
+					signal: controller.signal, // 传入 signal 用于stream
+					forceLanguage: forceLanguageMode.value // ✅ 新增强制语言参数
+				},actualKnowledgeBase.value);
 
 				function step(value?: any) {
 					const result = gen.next(value);
@@ -336,7 +376,7 @@ async function onConversation3() {
 
 						const mapKnowledgeBaseForDb = (): 'none' | 'english' | 'japanese' => {
 							if (!active.value) return 'none'; // 知识库关闭 → none
-							return currentKnowledgeBase.value === '英语' ? 'english' : 'japanese';
+							return actualKnowledgeBase.value === '英语' ? 'english' : 'japanese';
 						};
 
 						// 在保存逻辑部分修改为：
@@ -438,448 +478,6 @@ async function onConversation3() {
 	//保存消息记录到后端...zhy加油~
 }
 
-// onConversation 和onConversation2 不用
-// async function onConversation() {
-// 	const message = prompt.value
-// 	if (usingContext.value) {
-// 		for (let i = 0; i < dataSources.value.length; i = i + 2)
-// 			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-// 	}
-// 	else { history.value.length = 0 }
-// 	if (!message || message.trim() === '')
-// 		return
-
-// 	controller = new AbortController()
-
-// 	addChat(
-// 		+uuid,
-// 		{
-// 			dateTime: new Date().toLocaleString(),
-// 			text: message,
-// 			inversion: true,
-// 			error: false,
-// 			conversationOptions: null,
-// 			requestOptions: { prompt: message, options: null },
-
-// 		},
-// 	)
-// 	scrollToBottom()
-
-// 	loading.value = true
-// 	prompt.value = ''
-
-// 	let options: Chat.ConversationRequest = {}
-// 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-
-// 	if (lastContext && usingContext.value)
-// 		options = { ...lastContext }
-
-// 	addChat(
-// 		+uuid,
-// 		{
-// 			dateTime: new Date().toLocaleString(),
-// 			text: '',
-// 			loading: true,
-// 			inversion: false,
-// 			error: false,
-// 			conversationOptions: null,
-// 			requestOptions: { prompt: message, options: { ...options } },
-// 		},
-// 	)
-// 	scrollToBottom()
-
-// 	try {
-// 		const lastText = ''
-// 		const fetchChatAPIOnce = async () => {
-// 			const res = active.value ? await chatfile({ message, history: history.value }) : await chat({ message, history: history.value })
-// 			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-// 			updateChat(
-// 				+uuid,
-// 				dataSources.value.length - 1,
-// 				{
-// 					dateTime: new Date().toLocaleString(),
-// 					text: lastText + (result ?? ''),
-// 					inversion: false,
-// 					error: false,
-// 					loading: false,
-// 					conversationOptions: null,
-// 					requestOptions: { prompt: message, options: { ...options } },
-// 				},
-// 			)
-// 			scrollToBottomIfAtBottom()
-// 			loading.value = false
-// 			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
-// 				prompt: message,
-// 				options,
-// 				signal: controller.signal,
-// 				onDownloadProgress: ({ event }) => {
-// 					const xhr = event.target
-// 					const { responseText } = xhr
-// 					// Always process the final line
-// 					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-// 					let chunk = responseText
-// 					if (lastIndex !== -1)
-// 						chunk = responseText.substring(lastIndex)
-// 					try {
-// 						const data = JSON.parse(chunk)
-// 						updateChat(
-// 							+uuid,
-// 							dataSources.value.length - 1,
-// 							{
-// 								dateTime: new Date().toLocaleString(),
-// 								text: lastText + (data.text ?? ''),
-// 								inversion: false,
-// 								error: false,
-// 								loading: true,
-// 								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-// 								requestOptions: { prompt: message, options: { ...options } },
-// 							},
-// 						)
-
-// 						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-// 							options.parentMessageId = data.id
-// 							lastText = data.text
-// 							message = ''
-// 							return fetchChatAPIOnce()
-// 						}
-
-// 						scrollToBottomIfAtBottom()
-// 					}
-// 					catch (error) {
-// 						//
-// 					}
-// 				},
-// 			}) */
-// 			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-// 		}
-
-// 		await fetchChatAPIOnce()
-// 	}
-// 	catch (error: any) {
-// 		const errorMessage = error?.message ?? t('common.wrong')
-
-// 		if (error.message === 'canceled') {
-// 			updateChatSome(
-// 				+uuid,
-// 				dataSources.value.length - 1,
-// 				{
-// 					loading: false,
-// 				},
-// 			)
-// 			scrollToBottomIfAtBottom()
-// 			return
-// 		}
-
-// 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
-
-// 		if (currentChat?.text && currentChat.text !== '') {
-// 			updateChatSome(
-// 				+uuid,
-// 				dataSources.value.length - 1,
-// 				{
-// 					text: `${currentChat.text}\n[${errorMessage}]`,
-// 					error: false,
-// 					loading: false,
-// 				},
-// 			)
-// 			return
-// 		}
-
-// 		updateChat(
-// 			+uuid,
-// 			dataSources.value.length - 1,
-// 			{
-// 				dateTime: new Date().toLocaleString(),
-// 				text: errorMessage,
-// 				inversion: false,
-// 				error: true,
-// 				loading: false,
-// 				conversationOptions: null,
-// 				requestOptions: { prompt: message, options: { ...options } },
-// 			},
-// 		)
-// 		scrollToBottomIfAtBottom()
-// 	}
-// 	finally {
-// 		loading.value = false
-// 	}
-// }
-// async function onConversation2() {
-// 	const message = prompt.value
-// 	if (usingContext.value) {
-// 		for (let i = 0; i < dataSources.value.length; i = i + 2)
-// 			history.value.push([`Human:${dataSources.value[i].text}`, `Assistant:${dataSources.value[i + 1].text.split('\n\n数据来源：\n\n')[0]}`])
-// 	}
-// 	else { history.value.length = 0 }
-// 	if (!message || message.trim() === '')
-// 		return
-
-// 	controller = new AbortController()
-
-// 	addChat(
-// 		+uuid,
-// 		{
-// 			dateTime: new Date().toLocaleString(),
-// 			text: message,
-// 			inversion: true,
-// 			error: false,
-// 			conversationOptions: null,
-// 			requestOptions: { prompt: message, options: null },
-// 		},
-// 	)
-// 	scrollToBottom()
-
-// 	loading.value = true
-// 	prompt.value = ''
-
-// 	let options: Chat.ConversationRequest = {}
-// 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-
-// 	if (lastContext && usingContext.value)
-// 		options = { ...lastContext }
-
-// 	addChat(
-// 		+uuid,
-// 		{
-// 			dateTime: new Date().toLocaleString(),
-// 			text: '',
-// 			loading: true,
-// 			inversion: false,
-// 			error: false,
-// 			conversationOptions: null,
-// 			requestOptions: { prompt: message, options: { ...options } },
-// 		},
-// 	)
-// 	scrollToBottom()
-
-// 	try {
-// 		const lastText = ''
-// 		const fetchChatAPIOnce = async () => {
-// 			const res = active.value ? await chatfileOpenai({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value }) : await chatOpenAI({ message, api_key: store.Openaikey, basePath: store.Openaipath, history: history.value })
-// 			const result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res.data.text
-// 			updateChat(
-// 				+uuid,
-// 				dataSources.value.length - 1,
-// 				{
-// 					dateTime: new Date().toLocaleString(),
-// 					text: lastText + (result ?? ''),
-// 					inversion: false,
-// 					error: false,
-// 					loading: false,
-// 					conversationOptions: null,
-// 					requestOptions: { prompt: message, options: { ...options } },
-// 				},
-// 			)
-// 			scrollToBottomIfAtBottom()
-// 			loading.value = false
-// 			/* await fetchChatAPIProcess<Chat.ConversationResponse>({
-// 				prompt: message,
-// 				options,
-// 				signal: controller.signal,
-// 				onDownloadProgress: ({ event }) => {
-// 					const xhr = event.target
-// 					const { responseText } = xhr
-// 					// Always process the final line
-// 					const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-// 					let chunk = responseText
-// 					if (lastIndex !== -1)
-// 						chunk = responseText.substring(lastIndex)
-// 					try {
-// 						const data = JSON.parse(chunk)
-// 						updateChat(
-// 							+uuid,
-// 							dataSources.value.length - 1,
-// 							{
-// 								dateTime: new Date().toLocaleString(),
-// 								text: lastText + (data.text ?? ''),
-// 								inversion: false,
-// 								error: false,
-// 								loading: true,
-// 								conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-// 								requestOptions: { prompt: message, options: { ...options } },
-// 							},
-// 						)
-
-// 						if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-// 							options.parentMessageId = data.id
-// 							lastText = data.text
-// 							message = ''
-// 							return fetchChatAPIOnce()
-// 						}
-
-// 						scrollToBottomIfAtBottom()
-// 					}
-// 					catch (error) {
-// 						//
-// 					}
-// 				},
-// 			}) */
-// 			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
-// 		}
-
-// 		await fetchChatAPIOnce()
-// 	}
-// 	catch (error: any) {
-// 		const errorMessage = error?.message ?? t('common.wrong')
-
-// 		if (error.message === 'canceled') {
-// 			updateChatSome(
-// 				+uuid,
-// 				dataSources.value.length - 1,
-// 				{
-// 					loading: false,
-// 				},
-// 			)
-// 			scrollToBottomIfAtBottom()
-// 			return
-// 		}
-
-// 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
-
-// 		if (currentChat?.text && currentChat.text !== '') {
-// 			updateChatSome(
-// 				+uuid,
-// 				dataSources.value.length - 1,
-// 				{
-// 					text: `${currentChat.text}\n[${errorMessage}]`,
-// 					error: false,
-// 					loading: false,
-// 				},
-// 			)
-// 			return
-// 		}
-
-// 		updateChat(
-// 			+uuid,
-// 			dataSources.value.length - 1,
-// 			{
-// 				dateTime: new Date().toLocaleString(),
-// 				text: errorMessage,
-// 				inversion: false,
-// 				error: true,
-// 				loading: false,
-// 				conversationOptions: null,
-// 				requestOptions: { prompt: message, options: { ...options } },
-// 			},
-// 		)
-// 		scrollToBottomIfAtBottom()
-// 	}
-// 	finally {
-// 		loading.value = false
-// 	}
-// }
-
-// /* async function onRegenerate(index: number) {
-//   if (loading.value)
-//     return
-
-//   controller = new AbortController()
-
-//   const { requestOptions } = dataSources.value[index]
-
-//   let message = requestOptions?.prompt ?? ''
-
-//   let options: Chat.ConversationRequest = {}
-
-//   if (requestOptions.options)
-//     options = { ...requestOptions.options }
-
-//   loading.value = true
-
-//   updateChat(
-//     +uuid,
-//     index,
-//     {
-//       dateTime: new Date().toLocaleString(),
-//       text: '',
-//       inversion: false,
-//       error: false,
-//       loading: true,
-//       conversationOptions: null,
-//       requestOptions: { prompt: message, options: { ...options } },
-//     },
-//   )
-
-//   try {
-//     let lastText = ''
-//     const fetchChatAPIOnce = async () => {
-//       await fetchChatAPIProcess<Chat.ConversationResponse>({
-//         prompt: message,
-//         options,
-//         signal: controller.signal,
-//         onDownloadProgress: ({ event }) => {
-//           const xhr = event.target
-//           const { responseText } = xhr
-//           // Always process the final line
-//           const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-//           let chunk = responseText
-//           if (lastIndex !== -1)
-//             chunk = responseText.substring(lastIndex)
-//           try {
-//             const data = JSON.parse(chunk)
-//             updateChat(
-//               +uuid,
-//               index,
-//               {
-//                 dateTime: new Date().toLocaleString(),
-//                 text: lastText + (data.text ?? ''),
-//                 inversion: false,
-//                 error: false,
-//                 loading: true,
-//                 conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-//                 requestOptions: { prompt: message, options: { ...options } },
-//               },
-//             )
-
-//             if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-//               options.parentMessageId = data.id
-//               lastText = data.text
-//               message = ''
-//               return fetchChatAPIOnce()
-//             }
-//           }
-//           catch (error) {
-//             //
-//           }
-//         },
-//       })
-//       updateChatSome(+uuid, index, { loading: false })
-//     }
-//     await fetchChatAPIOnce()
-//   }
-//   catch (error: any) {
-//     if (error.message === 'canceled') {
-//       updateChatSome(
-//         +uuid,
-//         index,
-//         {
-//           loading: false,
-//         },
-//       )
-//       return
-//     }
-
-//     const errorMessage = error?.message ?? t('common.wrong')
-
-//     updateChat(
-//       +uuid,
-//       index,
-//       {
-//         dateTime: new Date().toLocaleString(),
-//         text: errorMessage,
-//         inversion: false,
-//         error: true,
-//         loading: false,
-//         conversationOptions: null,
-//         requestOptions: { prompt: message, options: { ...options } },
-//       },
-//     )
-//   }
-//   finally {
-//     loading.value = false
-//   }
-// }
-//  */
 
 
 function handleExport() {
@@ -1269,7 +867,7 @@ const getCurrentCharacterName = computed(() => {
 		<div class="w-full bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
 			<div class="max-w-screen-xl mx-auto flex items-center justify-between p-3">
 				<div class="flex items-center space-x-2">
-					<h1 class="text-lg font-medium text-gray-800 dark:text-gray-200">智能学习助手</h1>
+					<h1 class="text-lg font-medium text-gray-800 dark:text-gray-200">语言学习助手</h1>
 					<div v-if="!hasSelectedCharacter"
 						class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
 						请选择性格
@@ -1305,7 +903,7 @@ const getCurrentCharacterName = computed(() => {
 											'text-indigo-700 dark:text-indigo-300': currentKnowledgeBase === kb.value
 										}" class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
 											<SvgIcon
-												:icon="kb.value === '英语' ? 'twemoji:flag-united-kingdom' : 'twemoji:flag-japan'"
+												:icon=kb.icon
 												class="mr-2 w-5 h-5" />
 											<span>{{ kb.label }}</span>
 											<SvgIcon v-if="currentKnowledgeBase === kb.value" icon="ri:check-line"

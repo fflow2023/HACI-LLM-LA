@@ -92,6 +92,7 @@ export const remoteapi = async (params: remoteapiParams, language: string): Prom
 				top_p: 0.7,
 				top_k: 50,
 				frequency_penalty: 0.5,
+				enable_thinking:false,
 				n: 1,
 				messages: systempormpt.concat(historylist, userinput)
 			})
@@ -202,7 +203,7 @@ interface ChunkJson {
 }
 
 // 修改fetchStreamData函数
-export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal },language: string) {
+export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal ,forceLanguage?: string },language: string) {
 	// 添加 abort 信号监听
 	if (postparams.signal) {
 		postparams.signal.addEventListener('abort', () => {
@@ -230,8 +231,15 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 	const characterPrompt = characterInfo.prompt.replace(/\{language\}/g, language);
 	console.log('Character prompt:', characterPrompt) // 添加日志
 
+	// ✅ 新增：根据强制语言模式添加提示
+	let forceLanguagePrompt = '\n\n重要提示：在用户没有特别要求时，请使用中文进行教学';
+	if (postparams.forceLanguage === 'en') {
+		forceLanguagePrompt = '\n\n重要提示：You must answer the user\'s questions entirely in English and must not use any Chinese.';
+	} else if (postparams.forceLanguage === 'ja') {
+		forceLanguagePrompt = '\n\n重要提示：会話全体を通じて、ユーザーの質問には日本語のみで答えてください。他の言語は使用しないでください。';
+	}
 	// 组合系统提示词
-	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`
+	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}${forceLanguagePrompt}`
 	console.log('Final system prompt:', systemPrompt) // 添加日志
 
 	let systempormpt = [{ content: systemPrompt, role: 'system' }]
@@ -255,6 +263,7 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 			top_k: 50,
 			frequency_penalty: 0.5,
 			n: 1,
+			enable_thinking:false,
 			messages: systempormpt.concat(historylist, userinput)
 		})
 	});

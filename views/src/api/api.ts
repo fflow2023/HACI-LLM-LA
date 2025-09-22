@@ -204,13 +204,7 @@ interface ChunkJson {
 
 // 修改fetchStreamData函数
 export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal ,forceLanguage?: string },language: string) {
-	// 添加 abort 信号监听
-	if (postparams.signal) {
-		postparams.signal.addEventListener('abort', () => {
-			console.log('Stream aborted by controller')
-			reader?.cancel() // 主动取消流式读取
-		})
-	}
+
 
 	let stream = postparams['stream']
 	let historylist = getHistoryList(postparams['history'])
@@ -259,7 +253,7 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 		},
 		body: JSON.stringify({
 			model: import.meta.env.VITE_SILICONFLOW_MODEL,
-			stream: stream,
+			stream: true,
 			max_tokens: max_tokens_base[import.meta.env.VITE_SILICONFLOW_MODEL] || 4096,
 			temperature: 1.3,
 			top_p: 0.7,
@@ -274,6 +268,13 @@ export function* fetchStreamData(postparams: postParams & { signal?: AbortSignal
 	if (!reader) {
 		console.error('Failed to get reader from response body');
 		return;
+	}
+		// 添加 abort 信号监听
+	if (postparams.signal) {
+		postparams.signal.addEventListener('abort', () => {
+			console.log('Stream aborted by controller')
+			reader?.cancel() // 主动取消流式读取
+		})
 	}
 
 	const decoder = new TextDecoder();

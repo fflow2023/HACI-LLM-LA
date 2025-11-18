@@ -1,9 +1,12 @@
 # 数字人+AI语言学习助手
-需要同时启动AI语言学习助手项目以及数字人模块（在文件夹LiveTalking里，[原地址](https://github.com/lipku/LiveTalking) ；第一次启动前要先下载模型）
+需要同时启动原来的AI语言学习助手项目以及数字人模块（配置看LiveTalking\README.md，[原地址:https://github.com/lipku/LiveTalking](https://github.com/lipku/LiveTalking) ；第一次启动前要先下载wav2lip模型）
 
+```
+python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar1
+```
+启动数字人后进入 http://localhost:8010/dashboard.html 点击`start`启动连接。然后打开AI学习助手，开始对话。
 
-
-
+（edge-tts可能不稳定，需要网络连接）
 
 ## 部署
 ### 前提警告

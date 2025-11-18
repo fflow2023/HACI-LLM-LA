@@ -23,73 +23,122 @@ import { useCharacter } from '@/hooks/useCharacter'
 import { CharacterType } from '@/templates/characterPrompts'
 import CharacterSelector from './components/CharacterSelector.vue'
 let controller = new AbortController()
+const apiUrl = import.meta.env.VITE_DIGITAL_HUMAN_API
+
+
+// const sessionid = ref(null)
+ const sessionid =0 
+// const pc = new RTCPeerConnection()
+
+// async function initDigitalHuman() {
+//   try {
+//     // 1. 创建Offer并设置本地描述
+//     const offer = await pc.createOffer()
+//     await pc.setLocalDescription(offer) // ✅ 必须await
+    
+//     // 2. 调用/offer接口
+//     const response = await fetch(`${apiUrl}/human`, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         sdp: offer.sdp,
+//         type: offer.type
+//       })
+//     })
+    
+//     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    
+//     const answerData = await response.json()
+    
+//     // 3. ✅ 关键修复：转换为RTCSessionDescription对象
+//     const answer = new RTCSessionDescription({
+//       sdp: answerData.sdp,
+//       type: answerData.type
+//     })
+    
+//     // 4. 设置远程描述
+//     await pc.setRemoteDescription(answer)
+    
+//     // 5. 保存sessionid
+//     sessionid.value = answerData.sessionid
+    
+//     console.log('[数字人] 初始化成功，sessionid:', sessionid.value)
+//   } catch (error) {
+//     console.error('[数字人] 初始化失败:', error)
+//   }
+// }
+
+// // 在组件挂载时初始化
+// onMounted(() => {
+//   initDigitalHuman()
+// })
 
 // ✅ 知识库配置
 type KnowledgeBaseType = '英语' | '日语' | '全英语' | '全日语';
 // ✅ 更新知识库选项，添加全英文和全日语
 const knowledgeBases = [
-  { 
-    label: '英语学习助手', 
-    value: '英语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-united-kingdom'
-  },
-  { 
-    label: '日语学习助手', 
-    value: '日语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-japan'
-  },
-  { 
-    label: '全英语对话', 
-    value: '全英语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-united-kingdom'
-  },
-  { 
-    label: '全日语对话', 
-    value: '全日语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-japan'
-  }
+	{
+		label: '英语学习助手',
+		value: '英语' as KnowledgeBaseType,
+		icon: 'twemoji:flag-united-kingdom'
+	},
+	{
+		label: '日语学习助手',
+		value: '日语' as KnowledgeBaseType,
+		icon: 'twemoji:flag-japan'
+	},
+	{
+		label: '全英语对话',
+		value: '全英语' as KnowledgeBaseType,
+		icon: 'twemoji:flag-united-kingdom'
+	},
+	{
+		label: '全日语对话',
+		value: '全日语' as KnowledgeBaseType,
+		icon: 'twemoji:flag-japan'
+	}
 ];
 
 // 当前知识库状态（指定类型）
 const currentKnowledgeBase = ref<KnowledgeBaseType>(
-  (localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
+	(localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
 );
 // ✅ 新增：计算实际知识库类型（用于API调用）
 const actualKnowledgeBase = computed(() => {
-  if (currentKnowledgeBase.value === '全英语') return '英语';
-  if (currentKnowledgeBase.value === '全日语') return '日语';
-  return currentKnowledgeBase.value;
+	if (currentKnowledgeBase.value === '全英语') return '英语';
+	if (currentKnowledgeBase.value === '全日语') return '日语';
+	return currentKnowledgeBase.value;
 });
 
 // ✅ 新增：计算强制语言模式
 const forceLanguageMode = computed(() => {
-  if (currentKnowledgeBase.value === '全英语') return 'en';
-  if (currentKnowledgeBase.value === '全日语') return 'ja';
-  return 'cn';
+	if (currentKnowledgeBase.value === '全英语') return 'en';
+	if (currentKnowledgeBase.value === '全日语') return 'ja';
+	return 'cn';
 });
 
 const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
 
 const selectKnowledgeBase = (value: KnowledgeBaseType) => {
-  currentKnowledgeBase.value = value;
-  showKnowledgeBaseMenu.value = false;
-  localStorage.setItem('selectedKnowledgeBase', value);
-  
-  // ✅ 新增：根据模式显示提示
-  if(value==='英语'){
-    ms.info('已切换到英语学习助手模式');
-  }
-  if(value==='日语'){
-    ms.info('已切换到日语学习助手模式');
-  }
-  if (value === '全英语') {
-    ms.info('已切换到全英语模式，AI将全程使用英文回答');
-  }
-  if (value === '全日语') {
-    ms.info('已切换到全日语模式，AI将全程使用日语回答');
-  }
-// 可以在这里添加知识库切换后的逻辑
-  console.log(`切换到${ actualKnowledgeBase.value}知识库`);
+	currentKnowledgeBase.value = value;
+	showKnowledgeBaseMenu.value = false;
+	localStorage.setItem('selectedKnowledgeBase', value);
+
+	// ✅ 新增：根据模式显示提示
+	if (value === '英语') {
+		ms.info('已切换到英语学习助手模式');
+	}
+	if (value === '日语') {
+		ms.info('已切换到日语学习助手模式');
+	}
+	if (value === '全英语') {
+		ms.info('已切换到全英语模式，AI将全程使用英文回答');
+	}
+	if (value === '全日语') {
+		ms.info('已切换到全日语模式，AI将全程使用日语回答');
+	}
+	// 可以在这里添加知识库切换后的逻辑
+	console.log(`切换到${actualKnowledgeBase.value}知识库`);
 };
 
 // 以下为文本编辑器相关内容👇
@@ -325,7 +374,7 @@ async function onConversation3() {
 					character: currentCharacter.value, // 添加性格类型
 					signal: controller.signal, // 传入 signal 用于stream
 					forceLanguage: forceLanguageMode.value // ✅ 新增强制语言参数
-				},actualKnowledgeBase.value);
+				}, actualKnowledgeBase.value);
 
 				function step(value?: any) {
 					const result = gen.next(value);
@@ -341,8 +390,40 @@ async function onConversation3() {
 							scrollToBottomIfAtBottom()
 						}
 					} else {
+						// ✅ 流式响应处理完成
 						lastText += dataSources.value[dataSources.value.length - 1].text
 						loading.value = false
+
+						// ==================== 新增数字人播报逻辑 ====================
+						if (lastText.trim()) {  // ✅ 确保sessionid已获取
+							// 提取纯文本内容（移除数据来源等附加信息）
+							const pureText = lastText
+							.split('\n\n数据来源：\n\n')[0]
+							.replace(/[#*`>_\-+]/g, '')  // 移除 # * ` > _ - +  等符号
+							.replace(/\[(.*?)\]\(.*?\)/g, '$1')  // 将 [链接文本](url) 转为 链接文本
+							.replace(/!\[(.*?)\]\(.*?\)/g, '$1')  // 将 ![图片alt](url) 转为 图片alt
+							.replace(/\s+/g, ' ')  // 将多个空格/换行合并为单个空格
+							.trim();
+
+							// ✅ 使用完整URL和动态sessionid
+							fetch(`${apiUrl}/human`, {  // 替换your-server-ip为实际IP
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({
+									sessionid: sessionid,  // ✅ 从/offer接口获取的真实ID
+									type: 'echo',
+									text: pureText,
+									interrupt: false  // 建议false，避免频繁打断
+								})
+							}).catch(error => {
+								console.error('[数字人] 内容发送失败:', error);
+							});
+
+							console.log('[数字人] 内容已发送:', pureText.substring(0, 100) + '...');
+						}
+						// =========================================================
+
+
 						updateChat(
 							+uuid,
 							dataSources.value.length - 1,
@@ -902,9 +983,7 @@ const getCurrentCharacterName = computed(() => {
 											'bg-gray-100 dark:bg-gray-700': currentKnowledgeBase === kb.value,
 											'text-indigo-700 dark:text-indigo-300': currentKnowledgeBase === kb.value
 										}" class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-											<SvgIcon
-												:icon=kb.icon
-												class="mr-2 w-5 h-5" />
+											<SvgIcon :icon=kb.icon class="mr-2 w-5 h-5" />
 											<span>{{ kb.label }}</span>
 											<SvgIcon v-if="currentKnowledgeBase === kb.value" icon="ri:check-line"
 												class="ml-auto text-indigo-500 dark:text-indigo-400" />
@@ -1101,29 +1180,33 @@ const getCurrentCharacterName = computed(() => {
 </template>
 
 <style scoped>
-
 /* 淡入淡出动画 */
 .fade-enter-active {
-  transition: opacity 0.2s, transform 0.2s;
+	transition: opacity 0.2s, transform 0.2s;
 }
+
 .fade-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
+	opacity: 0;
+	transform: translateY(-10px);
 }
+
 .fade-enter-to {
-  opacity: 1;
-  transform: translateY(0);
+	opacity: 1;
+	transform: translateY(0);
 }
+
 .fade-leave-active {
-  transition: opacity 0.15s, transform 0.15s;
+	transition: opacity 0.15s, transform 0.15s;
 }
+
 .fade-leave-from {
-  opacity: 1;
-  transform: translateY(0);
+	opacity: 1;
+	transform: translateY(0);
 }
+
 .fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+	opacity: 0;
+	transform: translateY(-10px);
 }
 
 /* 新增样式 */

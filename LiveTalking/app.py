@@ -94,9 +94,31 @@ async def offer(request):
     #             {"code": -1, "msg": "reach max session"}
     #         ),
     #     )
-    sessionid = randN(6) #len(nerfreals)
+    
+    # 原代码（随机分配）：
+    # sessionid = randN(6) #len(nerfreals)
+    # nerfreals[sessionid] = None
+    # logger.info('sessionid=%d, session num=%d',sessionid,len(nerfreals))
+
+    # 新代码（顺序分配）：
+    # 检查是否达到最大会话数限制
+    if len(nerfreals) >= opt.max_session:
+        logger.info('reach max session')
+        return web.Response(
+            content_type="application/json",
+            text=json.dumps(
+                {"code": -1, "msg": "reach max session"}
+            ),
+        )
+
+    # 从0开始查找第一个可用的sessionid
+    sessionid = 0
+    while sessionid in nerfreals:
+        sessionid += 1
+        
     nerfreals[sessionid] = None
-    logger.info('sessionid=%d, session num=%d',sessionid,len(nerfreals))
+    logger.info('sessionid=%d, session num=%d', sessionid, len(nerfreals))
+    
     nerfreal = await asyncio.get_event_loop().run_in_executor(None, build_nerfreal,sessionid)
     nerfreals[sessionid] = nerfreal
     

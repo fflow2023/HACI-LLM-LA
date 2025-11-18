@@ -1,3 +1,10 @@
+# 数字人+AI语言学习助手
+需要同时启动AI语言学习助手项目以及数字人模块（在文件夹LiveTalking里，[原地址](https://github.com/lipku/LiveTalking) ；第一次启动前要先下载模型）
+
+
+
+
+
 ## 部署
 ### 前提警告
 > 本项目使用的node版本为18，如果之前未使用nvm管理node版本，并且下载的node版本非18，可以使用nvm切换

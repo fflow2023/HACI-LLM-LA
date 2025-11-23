@@ -16,6 +16,7 @@
 ###############################################################################
 
 # server.py
+import os
 from flask import Flask, render_template,send_from_directory,request, jsonify
 from flask_sockets import Sockets
 import base64
@@ -28,7 +29,7 @@ import numpy as np
 from threading import Thread,Event
 #import multiprocessing
 import torch.multiprocessing as mp
-
+import threading, sys
 from aiohttp import web
 import aiohttp
 import aiohttp_cors
@@ -302,6 +303,17 @@ async def on_shutdown(app):
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
+    
+def _monitor_exit_key(loop):
+    """监控按键 'q' 来强制退出程序"""
+    print("\n=== 按 'q' 键 + 回车强制退出程序 ===\n")
+    try:
+        for line in sys.stdin:
+            if line.strip().lower() == 'q':
+                print("正在强制退出...")
+                os._exit(0)  # 立即终止整个进程，不执行任何清理
+    except:
+        pass
 
 async def post(url,data):
     try:
@@ -456,6 +468,7 @@ if __name__ == '__main__':
                 if k!=0:
                     push_url = opt.push_url+str(k)
                 loop.run_until_complete(run(push_url,k))
+        threading.Thread(target=_monitor_exit_key, args=(loop,), daemon=True).start()
         loop.run_forever()    
     #Thread(target=run_server, args=(web.AppRunner(appasync),)).start()
     run_server(web.AppRunner(appasync))

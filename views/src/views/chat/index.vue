@@ -290,20 +290,31 @@ async function onConversation3() {
 					};
 				}
 
-				let documentContent: DocumentContent;
+				let documentContent: DocumentContent = { data: { content: [], url: '' } };
 				if (active.value) {
 
-					// 1. 获取知识库内容
+					// 1. 获取知识库内容（增加 5 秒超时截断跳过逻辑）
 					try {
-						documentContent = await chatfileContent({
+						const fetchTask = chatfileContent({
 							message: message,
 							knowledgeBase: actualKnowledgeBase.value,  // 添加知识库参数
 							hyperparameters: {
 								document_number: 2,
 							}
-						})
+						});
+						
+						const timeoutTask = new Promise<any>((resolve) => 
+							setTimeout(() => {
+								window.$message && window.$message.warning("提取知识库超时(>5s)，已跳过知识检索");
+								resolve({ data: { content: [], url: '' } });
+							}, 5000)
+						);
+
+						documentContent = await Promise.race([fetchTask, timeoutTask]);
+						
 					} catch (error: any) {
-						throw new Error("知识库查询失败，请检查网络连接或联系管理员") // 终止后续处理
+						console.warn("知识库查询遇到内部错误，已跳过:", error);
+						// 不抛出Error终止，直接留空继续后续大模型通讯
 					}
 					// console.log("****", documentContent)
 
@@ -405,7 +416,7 @@ async function onConversation3() {
 			}
 			else {
 				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream }, currentKnowledgeBase.value)
-				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](${import.meta.env.VITE_SERVICE_ADDRESS}${res.data.url})` : res
+				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](/api${res.data.url})` : res
 				lastText += result
 			}
 
@@ -705,7 +716,7 @@ const parseFile = async (fileItem: FileItem) => {
 	formData.append('file', fileItem.file);
 
 	try {
-		const url = `${import.meta.env.VITE_VIEWS_ADDRESS}/api/file/parse`;
+		const url = '/file/parse';
 		// ✅ 使用统一配置的 axios 实例
 		const response = await axios.post(url, formData, {
 			headers: {

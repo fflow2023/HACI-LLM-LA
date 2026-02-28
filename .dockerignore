@@ -1,0 +1,19 @@
+**/node_modules
+**/.git
+**/dist
+**/logs
+**/temp
+**/fileUpload
+**/.vscode
+**/.idea
+**/.husky
+**/coverage
+**/.nyc_output
+**/npm-debug.log
+**/*.log
+**/fileProcessing
+**/.DS_Store
+
+# 排除大型模型文件，不传入构建上下文，改为 volume 动态映射
+models/embedding/text2vec-large-chinese
+models/ChatGLM-6B

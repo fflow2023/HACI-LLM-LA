@@ -1,18 +1,49 @@
-FROM node:18
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-COPY . /usr/src/app
-# python
-RUN wget https://mirrors.huaweicloud.com/python/3.8.10/Python-3.8.10.tgz
-RUN tar -xzvf Python-3.8.10.tgz
-RUN mkdir /usr/local/python3 
-RUN /usr/src/app/Python-3.8.10/configure --prefix=/usr/local/python3
-RUN make && make install
-RUN ln -s /usr/local/python3/bin/python3  /usr/bin/python
-RUN npm config set registry
-RUN npm i -g pnpm
-RUN pnpm config set registry
-RUN pnpm i
+# ============ 阶段1: 安装依赖并构建 ============
+FROM node:18-alpine AS builder
+
+# 安装 native 依赖编译所需的系统库
+RUN apk add --no-cache python3 make g++
+
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+# 先复制依赖文件，利用 Docker 缓存层
+COPY package.json ./
+
+# 安装全部依赖（需要 devDependencies 中的 @nestjs/cli 来 build）
+# --shamefully-hoist 将所有间接依赖提升到 node_modules 根目录（NestJS 需要）
+RUN pnpm install --shamefully-hoist --config.confirmModulesPurge=false
+
+# 补齐源码中使用但 package.json 未声明的依赖
+RUN pnpm add uuid
+
+# 复制源码并构建
+COPY . .
+RUN pnpm run build
+
+# ============ 阶段2: 生产运行 ============
+FROM node:18-alpine
+
+# sharp 等 native 模块运行时依赖
+RUN apk add --no-cache vips-dev
+
+WORKDIR /app
+
+# 直接从 builder 复制已裁剪的 node_modules（保留全部隐式依赖）
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+
+# 复制启动脚本
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+# 创建持久化目录
+RUN mkdir -p /app/knowledgeBases /app/fileUpload
+
+ENV NODE_ENV=production
 
 EXPOSE 3000
-CMD ["pnpm", "start"]
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

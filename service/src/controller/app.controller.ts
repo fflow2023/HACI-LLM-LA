@@ -86,29 +86,9 @@ export class AppController {
     }
   }
 
-  // 统一的映射函数
-  private mapKnowledgeBase(kb: string | undefined): "en" | "jp" {
-    const knowledgeBaseMap: Record<string, "en" | "jp"> = {
-      英语: "en",
-      英文: "en",
-      english: "en",
-      日语: "jp",
-      日文: "jp",
-      japanese: "jp",
-    };
-
-    // 标准化输入：转为小写并去除空白
-    const normalizedKb = kb ? kb.trim().toLowerCase() : "";
-
-    // 尝试从映射表中获取值
-    const mappedValue = Object.keys(knowledgeBaseMap).find(
-      (key) => key.toLowerCase() === normalizedKb,
-    )
-      ? knowledgeBaseMap[normalizedKb]
-      : null;
-
-    // 返回映射结果或默认值
-    return mappedValue || "en";
+  // 统一的映射函数（已强制改为单通道语料库）
+  private mapKnowledgeBase(kb: string | undefined): string {
+    return "corpus_default";
   }
 
   //文件相关处理

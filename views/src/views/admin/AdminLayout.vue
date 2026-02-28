@@ -20,7 +20,7 @@ import Overview from './modules/Overview.vue'
 import UserManagement from './modules/UserManagement.vue'
 import InteractionManagement from './modules/InteractionManagement.vue'
 import FileManagement from './modules/FileManagement.vue'
-document.title = "AI语言学习助手-管理页面"
+document.title = "语料库语言学助手-管理页面"
 const tabs = ref([
   { id: 'overview', label: '总览', component: Overview },
   { id: 'users', label: '用户管理', component: UserManagement },

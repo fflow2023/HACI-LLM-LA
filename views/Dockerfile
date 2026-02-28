@@ -1,6 +1,4 @@
-# ============ 阶段1: 构建前端 ============
-# 使用较小的 alpine 镜像作为带 Node.JS 的构建环境
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 
 RUN npm install -g pnpm
 

@@ -54,17 +54,13 @@ const knowledgeBases = [
 const currentKnowledgeBase = ref<KnowledgeBaseType>(
   (localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
 );
-// ✅ 新增：计算实际知识库类型（用于API调用）
+// ✅ 新增：计算实际知识库类型（用于API调用）- 强制走单一库
 const actualKnowledgeBase = computed(() => {
-  if (currentKnowledgeBase.value === '全英语') return '英语';
-  if (currentKnowledgeBase.value === '全日语') return '日语';
-  return currentKnowledgeBase.value;
+  return 'corpus_default';
 });
 
-// ✅ 新增：计算强制语言模式
+// ✅ 新增：计算强制语言模式 - 强制走中文
 const forceLanguageMode = computed(() => {
-  if (currentKnowledgeBase.value === '全英语') return 'en';
-  if (currentKnowledgeBase.value === '全日语') return 'ja';
   return 'cn';
 });
 
@@ -385,9 +381,9 @@ async function onConversation3() {
 						//   })
 						// }
 
-						const mapKnowledgeBaseForDb = (): 'none' | 'english' | 'japanese' => {
+						const mapKnowledgeBaseForDb = (): string => {
 							if (!active.value) return 'none'; // 知识库关闭 → none
-							return actualKnowledgeBase.value === '英语' ? 'english' : 'japanese';
+							return 'corpus_default'; // 全部路由到同一个语料库标识
 						};
 
 						// 在保存逻辑部分修改为：
@@ -859,10 +855,10 @@ const characterIconMap = {
 // 获取当前性格的名称
 const getCurrentCharacterName = computed(() => {
 	const characterMap = {
-		strict: '严厉型教师',
-		encouraging: '鼓励型教师',
-		topStudent: '学霸同学',
-		strugglingStudent: '奋斗同学'
+		strict: '严厉导师',
+		encouraging: '鼓励导师',
+		topStudent: '硬核学霸',
+		strugglingStudent: '战友同学'
 	}
 	return currentCharacter.value ? characterMap[currentCharacter.value] : '请选择性格'
 })
@@ -878,7 +874,7 @@ const getCurrentCharacterName = computed(() => {
 		<div class="w-full bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
 			<div class="max-w-screen-xl mx-auto flex items-center justify-between p-3">
 				<div class="flex items-center space-x-2">
-					<h1 class="text-lg font-medium text-gray-800 dark:text-gray-200">语言学习助手</h1>
+					<h1 class="text-lg font-medium text-gray-800 dark:text-gray-200">语料库语言学助手</h1>
 					<div v-if="!hasSelectedCharacter"
 						class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
 						请选择性格
@@ -886,45 +882,12 @@ const getCurrentCharacterName = computed(() => {
 				</div>
 
 				<div class="flex items-center space-x-3">
-					<!-- 语言知识库选择器 -->
+					<!-- 语言知识库选择器 (暂时隐藏屏蔽以适配单一语料库助手) -->
+					<!--
 					<div class="relative">
-						<button @click.stop="showKnowledgeBaseMenu = !showKnowledgeBaseMenu"
-							class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors border border-indigo-200 dark:border-gray-600">
-							<SvgIcon icon="ri:translate-2" class="text-indigo-600 dark:text-indigo-400" />
-							<span class="text-sm text-gray-700 dark:text-gray-300">
-								{{knowledgeBases.find(kb => kb.value === currentKnowledgeBase)?.label || '语言助手'}}
-							</span>
-							<SvgIcon :icon="showKnowledgeBaseMenu ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
-								class="text-xs text-gray-500 transition-transform" />
-						</button>
-
-						<!-- 下拉菜单 - 带过渡动画 -->
-						<transition enter-active-class="transition duration-200 ease-out"
-							enter-from-class="transform opacity-0 scale-95 translate-y-1"
-							enter-to-class="transform opacity-100 scale-100"
-							leave-active-class="transition duration-150 ease-in"
-							leave-from-class="transform opacity-100 scale-100"
-							leave-to-class="transform opacity-0 scale-95 translate-y-1">
-							<div v-show="showKnowledgeBaseMenu"
-								class="absolute z-10 mt-1 w-44 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-right right-0">
-								<div class="py-1">
-									<template v-for="kb in knowledgeBases" :key="kb.value">
-										<button @click="selectKnowledgeBase(kb.value)" :class="{
-											'bg-gray-100 dark:bg-gray-700': currentKnowledgeBase === kb.value,
-											'text-indigo-700 dark:text-indigo-300': currentKnowledgeBase === kb.value
-										}" class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-											<SvgIcon
-												:icon=kb.icon
-												class="mr-2 w-5 h-5" />
-											<span>{{ kb.label }}</span>
-											<SvgIcon v-if="currentKnowledgeBase === kb.value" icon="ri:check-line"
-												class="ml-auto text-indigo-500 dark:text-indigo-400" />
-										</button>
-									</template>
-								</div>
-							</div>
-						</transition>
+						... (Language Selector removed for Corpus Linguistics) ...
 					</div>
+					-->
 					<!-- 性格切换按钮 - 美化版 -->
 					<NTooltip trigger="hover" placement="bottom">
 						<template #trigger>

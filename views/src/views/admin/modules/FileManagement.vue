@@ -5,12 +5,7 @@
     <!-- 知识库选择器 -->
     <div class="p-4">
       <div class="flex items-center gap-3 mb-3">
-        <NSelect
-          v-model:value="currentKnowledgeBase"
-          :options="knowledgeBases"
-          style="width: 200px"
-          @update:value="handleKnowledgeBaseChange"
-        />
+
               <!-- 文件上传 -->
       <NUpload 
         :action="api_file_url" 
@@ -32,7 +27,7 @@
           <template v-if="!dataSources.length">
             <div class="flex flex-col items-center mt-4 text-center text-neutral-300">
               <SvgIcon icon="ri:inbox-line" class="mb-2 text-3xl" />
-              <span>{{ currentKnowledgeBase }} 知识库为空</span>
+              <span>知识库为空</span>
             </div>
           </template>
           <template v-else>
@@ -53,7 +48,7 @@
                         <SvgIcon icon="ri:delete-bin-line" />
                       </button>
                     </template>
-                    {{ `确认从 ${currentKnowledgeBase} 知识库中删除？` }}
+                    {{ `确认从知识库中删除？` }}
                   </NPopconfirm>
                 </div>
               </div>
@@ -76,12 +71,7 @@ const api_file_url = '/api/file'
 const message = useMessage()
 const dataSources = ref<string[]>([])
 
-// 知识库相关状态
-const knowledgeBases = ref([
-  { label: '英语知识库', value: '英语' },
-  { label: '日语知识库', value: '日语' }
-])
-const currentKnowledgeBase = ref('英语')
+const currentKnowledgeBase = ref('corpus_default')
 
 // 上传配置
 const uploadHeaders = computed(() => ({
@@ -98,32 +88,27 @@ onMounted(() => {
 
 async function loadFileList(KnowledgeBase: string) {
   try {
-    const res = await getfilelist( KnowledgeBase )
+    const res = await getfilelist(KnowledgeBase)
     dataSources.value = res.data
     uploadKey.value = Date.now()
-    message.success(`已加载 ${KnowledgeBase} 知识库`)
+    message.success(`已刷新默认语料库文件`)
   } catch (error) {
     console.error('获取文件列表失败:', error)
-    message.error(`获取 ${KnowledgeBase} 知识库失败`)
+    message.error(`获取默认语料库失败`)
   }
 }
 
 const uploadKey = ref(Date.now())
 
-// 知识库切换处理
-const handleKnowledgeBaseChange = (value: string) => {
-  currentKnowledgeBase.value = value
-  loadFileList(value)
-}
 
 // 上传成功处理
 const handleUploadSuccess = ({ file }: { file: UploadFileInfo }) => {
-  message.success(`${file.name} 已上传到 ${currentKnowledgeBase.value} 知识库`)
+  message.success(`${file.name} 已上传到默认语料库`)
   loadFileList(currentKnowledgeBase.value)
 }
 
 const handleUploadError = ({ file }: { file: UploadFileInfo }) => {
-  message.error(`${file.name} 上传到 ${currentKnowledgeBase.value} 知识库失败`)
+  message.error(`${file.name} 上传失败`)
 }
 
 // 删除处理
@@ -134,7 +119,7 @@ async function handleDelete(item: string) {
       knowledgeBase: currentKnowledgeBase.value
     })
     await loadFileList(currentKnowledgeBase.value)
-    message.success(`已从 ${currentKnowledgeBase.value} 知识库中删除`)
+    message.success(`已从默认语料库中删除`)
   } catch (error) {
     console.error('删除失败:', error)
     message.error('删除失败')

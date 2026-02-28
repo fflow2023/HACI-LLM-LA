@@ -1,37 +1,61 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from './entities/user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { LoginResponseDto } from './dto/login-response.dto';
-import { ChatRecord } from '../auth/entities/record.entity';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  OnModuleInit,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcryptjs";
+import { User, UserRole } from "./entities/user.entity";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
+import { LoginResponseDto } from "./dto/login-response.dto";
+import { ChatRecord } from "../auth/entities/record.entity";
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     @InjectRepository(ChatRecord) // 新增注入聊天记录仓库
     private chatRecordRepo: Repository<ChatRecord>,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
-   // 新增记录方法
-   async logChatRecord(recordData: {
+  // 模块初始化时自动创建默认管理员
+  async onModuleInit() {
+    const adminExists = await this.userRepository.findOne({
+      where: { username: "admin" },
+    });
+    if (!adminExists) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash("Ab123456", salt);
+      const adminUser = this.userRepository.create({
+        username: "admin",
+        name: "系统管理员",
+        password: hashedPassword,
+        role: UserRole.ADMIN,
+      });
+      await this.userRepository.save(adminUser);
+      console.log("✅ 默认管理员账户已创建: 账号 [admin] 密码 [Ab123456]");
+    }
+  }
+
+  // 新增记录方法
+  async logChatRecord(recordData: {
     username: string;
     name: string;
     question: string;
     answer: string;
     characterUsed: string;
-    knowledgeBase?: 'japanese' | 'english' | 'none'; 
+    knowledgeBase?: "japanese" | "english" | "none";
   }) {
     const record = this.chatRecordRepo.create({
       ...recordData,
-      knowledgeBase: recordData.knowledgeBase || 'none',
-      createdAt: new Date()
+      knowledgeBase: recordData.knowledgeBase || "none",
+      createdAt: new Date(),
     });
     return this.chatRecordRepo.save(record);
   }
@@ -39,10 +63,10 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     // 检查用户名是否已存在
     const existingUser = await this.userRepository.findOne({
-      where: { username: registerDto.username }
+      where: { username: registerDto.username },
     });
     if (existingUser) {
-      throw new ConflictException('用户名已被注册');
+      throw new ConflictException("用户名已被注册");
     }
 
     // 生成密码哈希
@@ -57,32 +81,38 @@ export class AuthService {
     });
 
     const savedUser = await this.userRepository.save(user);
-    return { id: savedUser.id, username: savedUser.username, name: savedUser.name, role: savedUser.role, createdAt: savedUser.createdAt };
+    return {
+      id: savedUser.id,
+      username: savedUser.username,
+      name: savedUser.name,
+      role: savedUser.role,
+      createdAt: savedUser.createdAt,
+    };
   }
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userRepository.findOne({
       where: { username: loginDto.username },
-      select: ['id', 'username', 'password', 'role', 'name'] // 新增role和name字段
+      select: ["id", "username", "password", "role", "name"], // 新增role和name字段
     });
 
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
-      throw new UnauthorizedException('用户名或密码错误');
+      throw new UnauthorizedException("用户名或密码错误");
     }
 
     const payload = {
       sub: user.id,
       username: user.username,
-      role: user.role // 在JWT负载中加入角色
+      role: user.role, // 在JWT负载中加入角色
     };
 
     return {
       access_token: this.jwtService.sign(payload),
-      user: {  
+      user: {
         username: user.username,
-        name:user.name,
-        role: user.role.toUpperCase() as UserRole // 强制转为大写
-      }
+        name: user.name,
+        role: user.role.toUpperCase() as UserRole, // 强制转为大写
+      },
+    };
   }
-}
 }

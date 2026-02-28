@@ -301,7 +301,6 @@ async function onConversation3() {
 						
 						const timeoutTask = new Promise<any>((resolve) => 
 							setTimeout(() => {
-								window.$message && window.$message.warning("提取知识库超时(>5s)，已跳过知识检索");
 								resolve({ data: { content: [], url: '' } });
 							}, 5000)
 						);

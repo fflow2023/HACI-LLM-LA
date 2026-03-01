@@ -217,6 +217,9 @@ docker compose up -d --build
 ## 🖥️ 其它你可能会用到的常用指令
 
 ```bash
+# 启动
+docker compose up -d
+
 # 实时查看看某个服务的报错或运行日志（极其常用！）
 docker compose logs -f views       # 查看前端
 docker compose logs -f service     # 查看后端

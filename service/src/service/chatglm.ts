@@ -13,8 +13,16 @@ export class ChatglmService {
     const docNum = hyperparameters?.["document_number"] || 3;
 
     // 强制使用统一知识库存储
-    let vectorStore = GlobalService.en_globalVar;
-    if (!vectorStore) throw new Error("语料库检索池未初始化，请先上传知识片段");
+    const vectorStore = GlobalService.en_globalVar;
+    if (!vectorStore) {
+      return {
+        content: [],
+        url: [],
+        scores: [],
+        knowledgeBase,
+        message: "语料库检索池未初始化，请先上传知识片段",
+      };
+    }
 
     // 执行相似度搜索（带分数）
     const results = await vectorStore.similaritySearchWithScore(
@@ -49,8 +57,15 @@ export class ChatglmService {
     const { message, history } = body;
 
     // 强制使用统一知识库存储
-    let vectorStore = GlobalService.en_globalVar;
-    if (!vectorStore) throw new Error("语料库检索池未初始化，请先上传知识片段");
+    const vectorStore = GlobalService.en_globalVar;
+    if (!vectorStore) {
+      return {
+        answer:
+          "语料库检索池未初始化，请先打开管理端上传语料文件（.txt/.pdf/.docx 等）进行训练。",
+        urls: [],
+        knowledgeBase,
+      };
+    }
 
     // 检索相关文档
     const results = await vectorStore.similaritySearchWithScore(message, 5);

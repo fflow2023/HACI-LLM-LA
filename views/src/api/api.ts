@@ -17,6 +17,11 @@ const staticSystemPrompts = {
 	student: `你是一位东北大学秦皇岛分校的学生，正在学习{language}课程。你具备一定的{language}基础和学习能力，对{language}学习充满热情。你善于思考，乐于分享，能够用通俗易懂的方式解释{language}知识点。你的目标是帮助其他同学更好地理解{language}知识，共同进步。`,
 };
 
+// 课程简介背景
+const courseDescription = `本课程为"语料库与话语研究"，系统介绍语料库语言学的核心理论与实践方法，旨在培养学生运用语料库工具开展语言研究的能力。课程内容涵盖语料库的基本概念与研究范围、各类语料库的特点与应用、语料库的设计与建设方法，以及语料库在词汇、语法、语言使用和学习者研究等领域的具体应用。此外，课程还涉及语料库研究中常用的统计分析方法，帮助学生掌握定量与定性相结合的研究范式。
+课程采用理论与实操并重的教学模式，共设16周，循序渐进地引导学生从语料库基础知识入门，逐步掌握语料库分析手法，并最终能够独立开展语料库相关研究。课程配备在线学习助手平台，支持学生课后自主学习与练习。考核方式兼顾平时表现（40%）与期末随堂考试（60%），其中平时成绩包含出勤、课堂参与及小组发表作业，注重培养学生的合作研究能力与学术表达能力。
+本课程参考国内外权威教材，包括McEnery & Hardie的Corpus Linguistics: Method, Theory and Practice、石川慎一郎的语料库系列著作，以及梁茂成等学者编写的国内语料库教程。`;
+
 export const api = async (data: object): Promise<any> => {
 	return await request({
 		...data,
@@ -83,7 +88,7 @@ export const remoteapi = async (
 	console.log("Character prompt:", characterPrompt); // 添加日志
 
 	// 组合系统提示词
-	const systemPrompt = `${staticSystemPrompt}\n\n${characterPrompt}`;
+	const systemPrompt = `${staticSystemPrompt}\n\n【课程背景】${courseDescription}\n\n${characterPrompt}`;
 	console.log("Final system prompt:", systemPrompt); // 添加日志
 
 	let systempormpt = [{ content: systemPrompt, role: "system" }];
@@ -260,7 +265,7 @@ export function* fetchStreamData(
 	})();
 
 	// 组合系统提示词
-	const systemPrompt = `【语言规则】${forceLanguagePrompt}\n\n【身份定义】${staticSystemPrompt}\n\n【性格定义】${characterPrompt}\n\n【再次强度必须遵守的语言规则】${forceLanguagePrompt}`;
+	const systemPrompt = `【语言规则】${forceLanguagePrompt}\n\n【身份定义】${staticSystemPrompt}\n\n【课程背景】${courseDescription}\n\n【性格定义】${characterPrompt}\n\n【再次强度必须遵守的语言规则】${forceLanguagePrompt}`;
 	console.log("Final system prompt:", systemPrompt); // 添加日志
 
 	let systempormpt = [{ content: systemPrompt, role: "system" }];

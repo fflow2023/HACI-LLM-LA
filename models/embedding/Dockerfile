@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 # 💥 必须放到 COPY requirements 之前！这样 Docker 会永久缓存这巨大的几百兆依赖，
-# 回退到官方源或稳定版镜像源。使用 CPU 版本的直接包链接。
-RUN pip install --no-cache-dir torch==2.1.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+# 使用阿里云镜像源加速 PyTorch (CPU 版) 下载
+RUN pip install torch==2.1.2+cpu -f https://mirrors.aliyun.com/pytorch-wheels/cpu/torch_stable.html
 
 # 先复制依赖文件
 COPY requirements.txt ./

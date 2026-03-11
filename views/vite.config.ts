@@ -25,6 +25,7 @@ export default defineConfig((env) => {
   const viteEnv = loadEnv(env.mode, process.cwd()) as unknown as ImportMetaEnv
 
   return {
+    base: '/AIlearning/',
     resolve: {
       alias: {
         // 关键修改：适配 views/src 目录结构

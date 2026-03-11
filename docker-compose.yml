@@ -1,0 +1,96 @@
+# ============================================
+# HACI-LLM-LA Docker Compose 一键启动配置
+# 使用方法: docker compose up -d --build
+# ============================================
+
+services:
+  # ----- MySQL 数据库 -----
+  mysql:
+    image: mysql:8.0
+    container_name: haci-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-llm_service}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - haci-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----- 模型端 (Python Embedding) -----
+  embedding:
+    build:
+      context: ./models/embedding
+      dockerfile: Dockerfile
+    container_name: haci-embedding
+    restart: unless-stopped
+    ports:
+      - "56391:56391"
+    volumes:
+      - ./models/embedding/text2vec-large-chinese:/app/text2vec-large-chinese:ro
+    networks:
+      - haci-net
+    # ===== GPU 支持（取消下方注释即可启用）=====
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ----- 后端 (NestJS Service) -----
+  service:
+    build:
+      context: ./service
+      dockerfile: Dockerfile
+    container_name: haci-service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./service/knowledgeBases:/app/knowledgeBases
+      - ./service/fileUpload:/app/fileUpload
+    depends_on:
+      mysql:
+        condition: service_healthy
+      embedding:
+        condition: service_started
+    networks:
+      - haci-net
+
+  # ----- 前端 (Nginx + Vue) -----
+  views:
+    build:
+      context: ./views
+      dockerfile: Dockerfile
+    container_name: haci-views
+    restart: unless-stopped
+    ports:
+      - "2493:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - service
+    networks:
+      - haci-net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  haci-net:
+    driver: bridge

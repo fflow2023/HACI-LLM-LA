@@ -1,13 +1,16 @@
-//service\src\service\file.ts 
-import * as fs from 'fs';
-import * as path from 'path';
-import { GlobalService } from 'src/service/global';
-import { EmbeddingManager } from 'src/embeddings/embedding-manager.bak';
-import { TextLoader } from 'langchain/document_loaders/fs/text';
+//service\src\service\file.ts
+import * as fs from "fs";
+import * as path from "path";
+import { GlobalService } from "src/service/global";
+import { EmbeddingManager } from "src/embeddings/embedding-manager.bak";
+import { TextLoader } from "langchain/document_loaders/fs/text";
 import { DocxLoader } from "langchain/document_loaders/fs/docx";
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import { CSVLoader } from "langchain/document_loaders/fs/csv";
-import { DirectoryLoader, UnknownHandling } from "langchain/document_loaders/fs/directory";
+import {
+  DirectoryLoader,
+  UnknownHandling,
+} from "langchain/document_loaders/fs/directory";
 import { JSONLoader } from "langchain/document_loaders/fs/json";
 import { JSONLinesLoader } from "langchain/document_loaders/fs/json";
 import { EPubLoader } from "langchain/document_loaders/fs/epub";
@@ -15,17 +18,18 @@ import { SRTLoader } from "langchain/document_loaders/fs/srt";
 import { UnstructuredLoader } from "langchain/document_loaders/fs/unstructured";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { ocrService } from './ocr.service'; // 本地的OCR服务
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { v4 as uuid } from 'uuid';
-import { createHash } from 'crypto';
-import os from 'os';
-import chardet from 'chardet';
-import { BaseDocumentLoader } from 'langchain/dist/document_loaders/base';
+import { ocrService } from "./ocr.service"; // 本地的OCR服务
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { v4 as uuid } from "uuid";
+import { createHash } from "crypto";
+import os from "os";
+import chardet from "chardet";
+import { BaseDocumentLoader } from "langchain/dist/document_loaders/base";
 import { Document } from "langchain/document";
 
 // 修改文件存储路径，按知识库分目录
-const getKnowledgeBasePath = (knowledgeBase) => `./knowledgeBases/${knowledgeBase}`;
+const getKnowledgeBasePath = (knowledgeBase) =>
+  `./knowledgeBases/${knowledgeBase}`;
 
 // 确保目录存在
 const ensureDirectoryExists = (path) => {
@@ -41,35 +45,55 @@ const ensureKnowledgeBaseExists = (knowledgeBase) => {
 @Injectable()
 export class FileService {
   private readonly allowedExtensions = new Set([
-    'txt', 'md', 'docx', 'pdf', 'png', 'jpg', 'jpeg',
-    'csv', 'pptx', 'xlsx', 'json', 'xml', 'html', 'vue', 'py', 'js', 'ts',
-    'java', 'cpp', 'c', 'kt', 'rs', 'tex'
+    "txt",
+    "md",
+    "docx",
+    "pdf",
+    "png",
+    "jpg",
+    "jpeg",
+    "csv",
+    "pptx",
+    "xlsx",
+    "json",
+    "xml",
+    "html",
+    "vue",
+    "py",
+    "js",
+    "ts",
+    "java",
+    "cpp",
+    "c",
+    "kt",
+    "rs",
+    "tex",
   ]);
 
   private readonly officeParserConfig = {
-    ignoreNotes: true,          // 忽略PPT备注
-    newlineDelimiter: '\n',     // 使用系统换行符
-    outputErrorToConsole: false // 禁止输出内部错误
+    ignoreNotes: true, // 忽略PPT备注
+    newlineDelimiter: "\n", // 使用系统换行符
+    outputErrorToConsole: false, // 禁止输出内部错误
   };
 
-  private classifyFileType(ext: string): 'office' | 'text' | 'image' {
+  private classifyFileType(ext: string): "office" | "text" | "image" {
     switch (ext) {
-      case 'docx':
-      case 'pptx':
-      case 'xlsx':
-        return 'office';
-      case 'pdf':
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-        return 'image';
-      case 'txt':
-      case 'md':
-      case 'json':
-      case 'csv':
-        return 'text';
+      case "docx":
+      case "pptx":
+      case "xlsx":
+        return "office";
+      case "pdf":
+      case "png":
+      case "jpg":
+      case "jpeg":
+        return "image";
+      case "txt":
+      case "md":
+      case "json":
+      case "csv":
+        return "text";
       default:
-        return 'text';  //其他能直接读取的都默认为text文件就行
+        return "text"; //其他能直接读取的都默认为text文件就行
     }
   }
 
@@ -88,25 +112,33 @@ export class FileService {
       const fileType = this.detectFileType(buffer, originalName);
       if (!this.allowedExtensions.has(fileType)) {
         throw new HttpException(
-          { statusCode: HttpStatus.UNSUPPORTED_MEDIA_TYPE, message: `Unsupported file types: ${fileType}` },
-          HttpStatus.UNSUPPORTED_MEDIA_TYPE
+          {
+            statusCode: HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+            message: `Unsupported file types: ${fileType}`,
+          },
+          HttpStatus.UNSUPPORTED_MEDIA_TYPE,
         );
       }
 
       // 创建带时间戳的唯一临时目录
-      tempDir = path.join('./temp', `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`);
+      tempDir = path.join(
+        "./temp",
+        `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      );
       fs.mkdirSync(tempDir, { recursive: true });
 
       const tempPath = path.join(tempDir, `upload.${fileType}`);
       fs.writeFileSync(tempPath, buffer);
 
       return await this.parseFile(tempPath, fileType);
-
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new HttpException(
-        { statusCode: HttpStatus.BAD_REQUEST, message: error.message || 'File processing failed' },
-        HttpStatus.BAD_REQUEST
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: error.message || "File processing failed",
+        },
+        HttpStatus.BAD_REQUEST,
       );
     } finally {
       // 统一清理整个临时目录
@@ -135,7 +167,7 @@ export class FileService {
   //     const tempPath = path.join(tempDir, `upload.${fileType}`);
   //     fs.writeFileSync(tempPath, buffer);
 
-  //     return parsedContent; 
+  //     return parsedContent;
   //   } catch (error) {
   //     if (error instanceof HttpException) throw error;
   //     throw new HttpException(
@@ -157,20 +189,23 @@ export class FileService {
 
     try {
       switch (classifier) {
-        case 'office':
+        case "office":
           return await this.parseOfficeFile(filePath);
-        case 'text':
+        case "text":
           return await this.parseTextualFile(filePath, ext);
-        case 'image':
+        case "image":
           return await this.parseWithOCR(filePath);
         default:
-          throw new Error('Unsupported file type');
+          throw new Error("Unsupported file type");
       }
     } catch (error) {
-      throw new HttpException({
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: `解析失败: ${error.message}`
-      }, HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: `解析失败: ${error.message}`,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
@@ -178,12 +213,12 @@ export class FileService {
     try {
       // 添加类型断言确保Buffer类型
       const fileBuffer = fs.readFileSync(filePath) as Buffer;
-      const officeParser = require('officeparser');
+      const officeParser = require("officeparser");
 
       // 调用officeParser核心方法
       const content = await officeParser.parseOfficeAsync(
         fileBuffer,
-        this.officeParserConfig
+        this.officeParserConfig,
       );
 
       // 后处理逻辑
@@ -195,22 +230,26 @@ export class FileService {
 
   private postProcessContent(content: string, ext: string): string {
     const processors = {
-      '.pptx': (text: string) =>
-        text.split('\n')
-          .map(line => line.replace(/^Notes:\s*/i, ''))  // 移除备注标签
-          .filter(line => line.trim().length > 0)
-          .join('\n'),
-      '.xlsx': (text: string) =>
-        text.replace(/\t/g, ' | ')  // 表格格式化
-          .replace(/\n{3,}/g, '\n\n'),
-      '.docx': (text: string) =>
-        text.split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .join('\n'),
-      '.pdf': (text: string) =>
-        text.replace(/\s+/g, ' ')  // 压缩多余空格
-          .trim()
+      ".pptx": (text: string) =>
+        text
+          .split("\n")
+          .map((line) => line.replace(/^Notes:\s*/i, "")) // 移除备注标签
+          .filter((line) => line.trim().length > 0)
+          .join("\n"),
+      ".xlsx": (text: string) =>
+        text
+          .replace(/\t/g, " | ") // 表格格式化
+          .replace(/\n{3,}/g, "\n\n"),
+      ".docx": (text: string) =>
+        text
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .join("\n"),
+      ".pdf": (text: string) =>
+        text
+          .replace(/\s+/g, " ") // 压缩多余空格
+          .trim(),
     };
     const processor = processors[ext.toLowerCase()] || ((t: string) => t);
     return processor(content);
@@ -233,13 +272,13 @@ export class FileService {
       const buffer = fs.readFileSync(filePath);
 
       // 尝试UTF-8解码
-      let content = buffer.toString('utf-8');
+      let content = buffer.toString("utf-8");
 
       // 检查乱码
       if (/�/.test(content)) {
         // 使用iconv-lite解码为GBK
-        const iconv = require('iconv-lite');
-        content = iconv.decode(buffer, 'gbk');
+        const iconv = require("iconv-lite");
+        content = iconv.decode(buffer, "gbk");
       }
 
       return content;
@@ -249,15 +288,14 @@ export class FileService {
   }
 
   private async parseWithOCR(filePath: string) {
-
     let workerInitialized = false;
 
     try {
       const fileType = path.extname(filePath).toLowerCase().slice(1);
-      const isPDF = fileType === 'pdf';
+      const isPDF = fileType === "pdf";
       if (isPDF) {
         // 尝试直接提取PDF文本
-        const pdfText = await this.parseOfficeFile(filePath)
+        const pdfText = await this.parseOfficeFile(filePath);
         if (pdfText.trim().length > 0) return pdfText;
       }
 
@@ -275,18 +313,18 @@ export class FileService {
             const text = await ocrService.extractText(imgPath);
             results.push(text);
           }
-          return '(OCR识别内容)\n' + results.join('\n');
+          return "(OCR识别内容)\n" + results.join("\n");
         } finally {
           // 清理生成的图片文件
-          imagePaths.forEach(imgPath => fs.rmSync(imgPath));
-          const outputDir = path.join(path.dirname(filePath), 'pdf_images');
+          imagePaths.forEach((imgPath) => fs.rmSync(imgPath));
+          const outputDir = path.join(path.dirname(filePath), "pdf_images");
           fs.rmSync(outputDir, { recursive: true, force: true });
         }
       }
 
       // 单图像处理
       const singleImageText = await ocrService.extractText(filePath);
-      return '(OCR识别内容)\n' + singleImageText;
+      return "(OCR识别内容)\n" + singleImageText;
     } catch (error) {
       throw new Error(`OCR 处理失败: ${error.message}`);
     } finally {
@@ -300,42 +338,43 @@ export class FileService {
   private async convertPDFToImages(pdfPath: string): Promise<string[]> {
     let poppler;
     try {
-      poppler = require('pdf-poppler');
+      poppler = require("pdf-poppler");
     } catch (error) {
-      throw new Error('pdf-poppler not found');
+      throw new Error("pdf-poppler not found");
     }
 
-    const outputDir = path.join(path.dirname(pdfPath), 'pdf_images');
+    const outputDir = path.join(path.dirname(pdfPath), "pdf_images");
     let createdFiles: string[] = [];
 
     try {
       fs.mkdirSync(outputDir, { recursive: true });
 
       const opts = {
-        format: 'jpeg',
+        format: "jpeg",
         out_dir: outputDir,
-        out_prefix: path.basename(pdfPath, '.pdf'),
-        page: null
+        out_prefix: path.basename(pdfPath, ".pdf"),
+        page: null,
       };
 
       await poppler.convert(pdfPath, opts);
 
-      createdFiles = fs.readdirSync(outputDir)
-        .filter(file => file.startsWith(opts.out_prefix))
-        .map(file => path.join(outputDir, file))
+      createdFiles = fs
+        .readdirSync(outputDir)
+        .filter((file) => file.startsWith(opts.out_prefix))
+        .map((file) => path.join(outputDir, file))
         .sort();
 
       if (createdFiles.length === 0) {
-        throw new Error('PDF转换未生成任何图片文件');
+        throw new Error("PDF转换未生成任何图片文件");
       }
 
       return createdFiles;
     } catch (error) {
-      fs.existsSync(outputDir) && fs.rmSync(outputDir, { recursive: true, force: true });
+      fs.existsSync(outputDir) &&
+        fs.rmSync(outputDir, { recursive: true, force: true });
       throw new Error(`PDF转图片失败: ${error.message}`);
     }
   }
-
 
   // private async parsescv(filePath: string): Promise<string> {
   //   const ext = path.extname(filePath).toLowerCase();
@@ -371,7 +410,6 @@ export class FileService {
   //     .join('\n');
   // }
 
-
   // private async parseExcel(filePath: string): Promise<string> {
   //   const xlsx = require('xlsx');
   //   const workbook = xlsx.readFile(filePath);
@@ -394,7 +432,6 @@ export class FileService {
   //     return `工作表: ${sheetName}\n${rows.join('\n')}`;
   //   }).join('\n\n');
   // }
-
 
   // private async parseppt(filePath: string): Promise<string> {
   //   const ext = path.extname(filePath).toLowerCase();
@@ -468,68 +505,59 @@ export class FileService {
   //   }
   // }
 
-
   // 上传文件向量化
   async refactorVectorStore(knowledgeBase) {
     const knowledgeBasePath = ensureKnowledgeBaseExists(knowledgeBase);
-    const loader = new DirectoryLoader(
-      knowledgeBasePath,
-      {
-        ".pdf": (path) => new PDFLoader(path),
-        ".csv": (path) => new CSVLoader(path),       // 新增 CSV 支持
-        ".docx": (path) => new DocxLoader(path),
-        ".epub": (path) => new EPubLoader(path),            // 新增 EPUB 支持
-        ".srt": (path) => new SRTLoader(path),              // 新增 SRT 字幕支持
-        ".jsonl": (path) => new JSONLinesLoader(path, "/html"), // 新增 JSONL 支持
-        // 特殊格式专用loader
+    const loader = new DirectoryLoader(knowledgeBasePath, {
+      ".pdf": (path) => new PDFLoader(path),
+      ".csv": (path) => new CSVLoader(path), // 新增 CSV 支持
+      ".docx": (path) => new DocxLoader(path),
+      ".epub": (path) => new EPubLoader(path), // 新增 EPUB 支持
+      ".srt": (path) => new SRTLoader(path), // 新增 SRT 字幕支持
+      ".jsonl": (path) => new JSONLinesLoader(path, "/html"), // 新增 JSONL 支持
+      // 特殊格式专用loader
 
-        // 纯文本格式（共20种直接列出）
-        ".txt": (path) => new TextLoader(path),
-        ".md": (path) => new TextLoader(path),
-        ".py": (path) => new TextLoader(path),
-        ".js": (path) => new TextLoader(path),
-        ".ts": (path) => new TextLoader(path),
-        ".java": (path) => new TextLoader(path),
-        ".cpp": (path) => new TextLoader(path),
-        ".c": (path) => new TextLoader(path),
-        ".kt": (path) => new TextLoader(path),
-        ".rs": (path) => new TextLoader(path),
-        ".tex": (path) => new TextLoader(path),
-        ".vue": (path) => new TextLoader(path),
-        ".html": (path) => new TextLoader(path),
-        ".xml": (path) => new TextLoader(path),
-        ".json": (path) => new TextLoader(path),
-        ".css": (path) => new TextLoader(path),
-        ".sh": (path) => new TextLoader(path),
-        ".yaml": (path) => new TextLoader(path),
-        ".yml": (path) => new TextLoader(path),
-        ".conf": (path) => new TextLoader(path),
-        ".": (path) => new TextLoader(path)  //DirectoryLoader 的原生实现只做精确匹配，没有通配符逻辑 这个是无后缀名的文件
-      }
-    );
+      // 纯文本格式（共20种直接列出）
+      ".txt": (path) => new TextLoader(path),
+      ".md": (path) => new TextLoader(path),
+      ".py": (path) => new TextLoader(path),
+      ".js": (path) => new TextLoader(path),
+      ".ts": (path) => new TextLoader(path),
+      ".java": (path) => new TextLoader(path),
+      ".cpp": (path) => new TextLoader(path),
+      ".c": (path) => new TextLoader(path),
+      ".kt": (path) => new TextLoader(path),
+      ".rs": (path) => new TextLoader(path),
+      ".tex": (path) => new TextLoader(path),
+      ".vue": (path) => new TextLoader(path),
+      ".html": (path) => new TextLoader(path),
+      ".xml": (path) => new TextLoader(path),
+      ".json": (path) => new TextLoader(path),
+      ".css": (path) => new TextLoader(path),
+      ".sh": (path) => new TextLoader(path),
+      ".yaml": (path) => new TextLoader(path),
+      ".yml": (path) => new TextLoader(path),
+      ".conf": (path) => new TextLoader(path),
+      ".": (path) => new TextLoader(path), //DirectoryLoader 的原生实现只做精确匹配，没有通配符逻辑 这个是无后缀名的文件
+    });
 
     // 文本切割,将文档拆分为块
     const textsplitter = new RecursiveCharacterTextSplitter({
       separators: ["\n\n", "\n", "。", "！", "？", ".", "!", "?"],
-      chunkSize: 800,
+      chunkSize: 500,
       chunkOverlap: 100,
-    })
+    });
     const docs = await loader.loadAndSplit(textsplitter);
 
-    // 加载向量存储库 
+    // 加载向量存储库
     const vectorStore = await MemoryVectorStore.fromDocuments(
       docs,
-      EmbeddingManager.getCurrentEmbedding()
+      EmbeddingManager.getCurrentEmbedding(),
     );
-    if (knowledgeBase == "en") {
-      GlobalService.en_globalVar = vectorStore
-      console.log('EN知识库向量化成功！');
-    } else {
-      GlobalService.jp_globalVar = vectorStore
-      console.log('JP知识库向量化成功！');
-    }
+    // 无论前台选何种分类，所有知识库资料统一定位至默认加载池
+    GlobalService.en_globalVar = vectorStore;
+    console.log("语料库(默认池)向量化载入成功！");
   }
-
 
   //获取本地文件列表
   async getFileList(knowledgeBase) {

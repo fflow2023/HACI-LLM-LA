@@ -147,7 +147,7 @@ watch(
 	},
 )
 
-const api_file_url = import.meta.env.VITE_VIEWS_ADDRESS + '/api/file'
+const api_file_url = '/api/file'
 </script>
 
 <template>

@@ -1,4 +1,9 @@
+以下为旧的手动部署教程，现在已经更新为docker部署，请参考[README_docker.md](README_docker.md)
+
+---
+
 ## 部署
+
 ### 前提警告
 > 本项目使用的node版本为18，如果之前未使用nvm管理node版本，并且下载的node版本非18，可以使用nvm切换
 
@@ -183,7 +188,6 @@
 - 在管理员界面可以上传知识库文件，目前chat页面的知识库问答功能是默认开启的，需要运行models层才能生效。
 
 
-
 - 退出service目录，进入models/embedding目录，安装依赖(建议单独拉一个python环境安装，依赖挺容易出问题)
   ```shell
   cd ../models/embedding
@@ -216,16 +220,3 @@ bash stop.sh
 3. 在[/HACI-LLM-LA/service/.env](/service/.env)中，将EMBEDDING_SERVER_URL修改为embedding模型的局域网地址
 4. 如果service中没有局域网地址，请检查[HACI-LLM-LA/service/src/main.ts](/service/src/main.ts)文件中start_lan变量是否设置为true（默认为true）
 -----------------------------------
-
-## 项目日志
-> 2025.04.21 `lsf` 增加模版红头文件
-> 2025.04.21 `zjh` 增加OCR功能
-> 2025.04.09 `zjh` 增加上传文件逻辑
-> 2025.03.28 `lsf` 增加文书样版种类
-> 2025.03.25 `zq` 增加局域网启动功能
-> 2025.03.23 `zq` 增加知识库功能
-> 2025.03.20 `zq` 添加silicon flow接口，并实现流式生成
-> 2025.03.19 `zhy` 完成“编辑器”功能
-> 2025.03.18 `zjh` 完成“在页面中编辑”的功能
-> 2025.03.17 `zq` 修复前端页面bug
-

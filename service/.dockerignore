@@ -1,0 +1,12 @@
+node_modules
+dist
+*.log
+.git
+.gitignore
+.eslintrc.js
+jest.json
+e2e
+temp
+fileUpload
+knowledgeBases
+fileProcessing

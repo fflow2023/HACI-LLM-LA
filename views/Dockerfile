@@ -1,56 +1,28 @@
-# build front-end
-FROM node:lts-alpine AS frontend
+FROM node:18-slim AS builder
 
-RUN npm install pnpm -g
+RUN npm install -g pnpm
 
 WORKDIR /app
 
-COPY ./package.json /app
-
-COPY ./pnpm-lock.yaml /app
-
+# 先复制 package.json 与锁文件，以便充分利用 Docker 缓存加速依赖安装
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
-COPY . /app
+# 再复制项目所有前端源码
+COPY . .
 
-RUN pnpm run build
+# 跳过 browserslist 更新提示，并增加 NodeJS 编译可用内存上限（防止服务器构建被系统杀进程OOM）
+ENV BROWSERSLIST_IGNORE_OLD_DATA=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# build backend
-FROM node:lts-alpine as backend
+RUN pnpm run build-only
 
-RUN npm install pnpm -g
+# ============ 阶段2: Nginx 托管 ============
+FROM nginx:alpine
 
-WORKDIR /app
+# 只从 builder 阶段复制已经编译加工好的 dist 静态文件
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-COPY /service/package.json /app
+EXPOSE 80
 
-COPY /service/pnpm-lock.yaml /app
-
-RUN pnpm install
-
-COPY /service /app
-
-RUN pnpm build
-
-# service
-FROM node:lts-alpine
-
-RUN npm install pnpm -g
-
-WORKDIR /app
-
-COPY /service/package.json /app
-
-COPY /service/pnpm-lock.yaml /app
-
-RUN pnpm install --production && rm -rf /root/.npm /root/.pnpm-store /usr/local/share/.cache /tmp/*
-
-COPY /service /app
-
-COPY --from=frontend /app/dist /app/public
-
-COPY --from=backend /app/build /app/build
-
-EXPOSE 3002
-
-CMD ["pnpm", "run", "prod"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -30,7 +30,7 @@ import { api, remoteapi } from "./api";
 export const chatfile = (params: any) => {
 	//获取某个文件的内容
 	return api({
-		url: "/chatfile",
+		url: "chatfile",
 		method: "post",
 		data: qs.stringify(params),
 	});
@@ -39,7 +39,7 @@ export const chatfile = (params: any) => {
 export const chatfileContent = (params: any) => {
 	//获取知识库内容
 	return api({
-		url: "/chatfileContent",
+		url: "chatfileContent",
 		method: "post",
 		data: qs.stringify(params),
 	});
@@ -49,7 +49,7 @@ export const chatfileContent = (params: any) => {
 export const getfilelist = (knowledgeBase: string) => {
 	//获取知识库文件列表
 	return api({
-		url: "/file/query-list",
+		url: "file/query-list",
 		method: "get",
 		params: { knowledgeBase },
 	});
@@ -58,7 +58,7 @@ export const getfilelist = (knowledgeBase: string) => {
 export const deletefile = (params: any) => {
 	//删除知识库文件
 	return api({
-		url: "/file/delete",
+		url: "file/delete",
 		method: "post",
 		data: qs.stringify(params),
 	});
@@ -67,7 +67,7 @@ export const deletefile = (params: any) => {
 export const setembedding = (params: any) => {
 	// ?
 	return api({
-		url: "/set-embedding",
+		url: "set-embedding",
 		method: "post",
 		data: qs.stringify(params),
 	});

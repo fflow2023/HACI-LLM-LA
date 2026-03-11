@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), config?.timeout || 5000)
 
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/AIlearning/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('auth', {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), config?.timeout || 5000)
 
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch('/AIlearning/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

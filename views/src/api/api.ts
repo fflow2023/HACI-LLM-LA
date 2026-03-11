@@ -270,7 +270,7 @@ export function* fetchStreamData(
 
 	// 如果有参考资料，将其注入为系统级上下文
 	if (postparams.context) {
-		systemPrompt += `\n\n【系统检索到的参考资料（仅作为参考，如果不相关请忽略）】：\n${postparams.context}`;
+		systemPrompt += `\n\n【系统检索到的参考资料（用户不可见，仅作为参考，如果不相关请忽略）】：\n${postparams.context}`;
 	}
 	console.log("Final system prompt:", systemPrompt); // 添加日志
 

@@ -368,7 +368,7 @@ async function onConversation3() {
 				step();
 			} else {
 				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream }, currentKnowledgeBase.value)
-				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](/api${res.data.url})` : res
+				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](/AIlearning/api${res.data.url})` : res
 				lastText += result
 			}
 
@@ -634,7 +634,7 @@ const parseFile = async (fileItem: FileItem) => {
 	formData.append('file', fileItem.file);
 
 	try {
-		const url = '/file/parse';
+		const url = 'file/parse';
 		// ✅ 使用统一配置的 axios 实例
 		const response = await axios.post(url, formData, {
 			headers: {

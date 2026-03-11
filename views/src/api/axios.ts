@@ -6,7 +6,7 @@ import axios from 'axios'
 import { useMessage } from 'naive-ui'
 const instance = axios.create({
   // process.env.NODE_ENV === 'development' 来判断是否开发环境
-  baseURL: 'api',
+  baseURL: '/AIlearning/api',
   /*  process.env.USAGE === 'development'
       ?
       window.baseApi ?? '/api'

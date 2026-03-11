@@ -67,7 +67,7 @@ import type { UploadFileInfo } from 'naive-ui'
 import { SvgIcon } from '@/components/common'
 import { deletefile, getfilelist } from '@/api/chat'
 
-const api_file_url = '/api/file'
+const api_file_url = '/AIlearning/api/file'
 const message = useMessage()
 const dataSources = ref<string[]>([])
 

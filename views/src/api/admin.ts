@@ -1,5 +1,4 @@
-// src/api/admin.ts
-import axios from "axios";
+import request from "./axios";
 
 export interface User {
 	id: number;
@@ -11,9 +10,9 @@ export interface User {
 
 async function executeSQL(sql: string): Promise<{ data: any; error?: string }> {
 	try {
-		const url = "/api/sql";
+		const url = "sql";
 
-		const response = await axios.post(
+		const response = await request.post(
 			url,
 			{ sql },
 			{

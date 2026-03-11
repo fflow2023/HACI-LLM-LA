@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-langchain_community
-transformers<4.48.0
-sentence_transformers
-langchain-huggingface
+numpy==1.26.4
+fastapi==0.111.0
+uvicorn==0.30.1
+langchain-community==0.2.6
+transformers==4.42.4
+sentence-transformers==3.0.1
+langchain-huggingface==0.0.3

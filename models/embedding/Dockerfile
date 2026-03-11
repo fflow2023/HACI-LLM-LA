@@ -2,12 +2,12 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# 💥 必须放到 COPY requirements 之前！这样 Docker 会永久缓存这巨大的几百兆依赖，
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ && \
     rm -rf /var/lib/apt/lists/*
 
+# 💥 必须放到 COPY requirements 之前！这样 Docker 会永久缓存这巨大的几百兆依赖，
 # 回退到官方源或稳定版镜像源。使用 CPU 版本的直接包链接。
 RUN pip install --no-cache-dir torch==2.1.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 

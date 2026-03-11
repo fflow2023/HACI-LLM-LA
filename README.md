@@ -77,8 +77,8 @@
   # VITE_SILICONFLOW_MODEL="Qwen/QwQ-32B"
 
   # 设置views的地址，启动为局域网时，需修改为实际地址
-  VITE_VIEWS_ADDRESS="http://127.0.0.1:2493"
-  # VITE_VIEWS_ADDRESS="http://10.108.113.53:2493"
+  VITE_VIEWS_ADDRESS="http://127.0.0.1:2493/AIlearning/"
+  # VITE_VIEWS_ADDRESS="http://10.108.113.53:2493/AIlearning/"
 
   # 设置service的地址，启动为局域网时，需修改为实际地址
   VITE_SERVICE_ADDRESS="http://127.0.0.1:3000"
@@ -89,7 +89,7 @@
   ```shell
   npm run dev
   ```
-- 打开前端地址：http://localhost:2493/
+- 打开前端地址：http://localhost:2493/AIlearning/
 - 退出views目录，进入service目录，安装依赖
   ```shell
   cd ../service

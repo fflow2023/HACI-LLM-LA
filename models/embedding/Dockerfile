@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir torch==2.1.2+cpu -f https://mirrors.aliyun.com/py
 # 先复制依赖文件
 COPY requirements.txt ./
 
-# 安装其余 Python 依赖 (清华源)
-RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+# 安装其余 Python 依赖 (阿里云镜像源)
+RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 # 模型文件通过外部 docker-compose 挂载到 /app/paraphrase-multilingual-MiniLM-L12-v2
 

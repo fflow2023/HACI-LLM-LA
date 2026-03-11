@@ -5,12 +5,7 @@ import axios from 'axios'
 
 import { useMessage } from 'naive-ui'
 const instance = axios.create({
-  // process.env.NODE_ENV === 'development' 来判断是否开发环境
-  baseURL: '/AIlearning/api',
-  /*  process.env.USAGE === 'development'
-      ?
-      window.baseApi ?? '/api'
-      : 'http://192.168.1.99:51798', */
+  baseURL: import.meta.env.VITE_GLOB_API_URL || '/api',
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
   },
@@ -36,8 +31,9 @@ instance.interceptors.response.use(
         case 401:
           // 返回 401 清除token信息并跳转到登录页面
           message.error('401')
-          sessionStorage.removeItem('xtoken')
-          break
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('userInfo')
+          break;
         case 403:
           message.error('403')
           break

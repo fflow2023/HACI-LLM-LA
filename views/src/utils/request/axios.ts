@@ -3,7 +3,7 @@ import { router } from "@/router";
 
 // 创建强类型实例
 const service: AxiosInstance = axios.create({
-	baseURL: "/api",
+	baseURL: import.meta.env.VITE_GLOB_API_URL || "/api",
 	timeout: 60000,
 	withCredentials: false,
 });

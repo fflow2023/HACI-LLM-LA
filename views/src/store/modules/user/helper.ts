@@ -17,7 +17,7 @@ export function defaultSetting(): UserState {
     userInfo: {
       avatar: 'https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg',
       name: 'AI学习助手',
-      description: '2025 Powered by HACI',
+      description: '2026 Powered by HACI',
     },
   }
 }

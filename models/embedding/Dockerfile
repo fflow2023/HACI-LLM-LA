@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # 安装其余 Python 依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 模型文件通过外部 docker-compose挂载到 /app/text2vec-large-chinese
+# 模型文件通过外部 docker-compose 挂载到 /app/paraphrase-multilingual-MiniLM-L12-v2
 
 # 复制应用代码
 COPY api.py ./

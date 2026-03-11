@@ -27,16 +27,11 @@ cd HACI-LLM-LA
 
 ### 1.2 手动下载文本向量化模型（极其重要）
 
-为了让本地知识库（RAG）能够正常运算，你需要将 `text2vec-large-chinese` 模型放置入此项目的特定文件夹下。
+为了让本地知识库（RAG）能够正常运算，你需要将 `paraphrase-multilingual-MiniLM-L12-v2` 模型放置入此项目的特定文件夹下。
 
-请在项目根目录 `HACI-LLM-LA` 内，运行以下命令（请确保你安装了 Git LFS）：
+请自行从 HuggingFace 等渠道下载 `paraphrase-multilingual-MiniLM-L12-v2` 的所有模型文件（如 pytorch_model.bin、config.json 等），并放入项目对应的文件夹内。
 
-```bash
-cd models/embedding
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-```
-
-> **注意**：下载完成后，请确保模型文件夹的目录结构必定是 `HACI-LLM-LA/models/embedding/text2vec-large-chinese/`。
+> **注意**：下载完成后，请确保模型文件夹的目录结构必定是 `HACI-LLM-LA/models/embedding/paraphrase-multilingual-MiniLM-L12-v2/`。
 
 完事后，重新回到项目根目录：
 

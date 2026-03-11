@@ -8,7 +8,7 @@ import torch
 import socket
 import logging
 
-DEVICE = "cuda"
+DEVICE = "cpu"
 DEVICE_ID = "0"
 CUDA_DEVICE = f"{DEVICE}:{DEVICE_ID}" if DEVICE_ID else DEVICE
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
     # model.eval()
     embeddings = HuggingFaceEmbeddings(
-        model_name='./text2vec-large-chinese')
+        model_name='./paraphrase-multilingual-MiniLM-L12-v2')
     # embeddings.client = sentence_transformers.SentenceTransformer(embeddings.model_name,
     #                                                               device=embedding_device)
     

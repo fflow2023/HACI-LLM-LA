@@ -35,7 +35,7 @@ services:
     ports:
       - "56391:56391"
     volumes:
-      - ./models/embedding/text2vec-large-chinese:/app/text2vec-large-chinese:ro
+      - ./models/embedding/paraphrase-multilingual-MiniLM-L12-v2:/app/paraphrase-multilingual-MiniLM-L12-v2:ro
     networks:
       - haci-net
     # ===== GPU 支持（取消下方注释即可启用）=====

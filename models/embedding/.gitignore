@@ -22,7 +22,7 @@ fileProcessing
 fileUpload
 
 # model
-text2vec-large-chinese
+paraphrase-multilingual-MiniLM-L12-v2
 
 # log
 record.md

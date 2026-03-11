@@ -2,21 +2,20 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+# 💥 必须放到 COPY requirements 之前！这样 Docker 会永久缓存这巨大的几百兆依赖，
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ && \
     rm -rf /var/lib/apt/lists/*
 
+# 回退到官方源或稳定版镜像源。使用 CPU 版本的直接包链接。
+RUN pip install --no-cache-dir torch==2.1.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+
 # 先复制依赖文件
 COPY requirements.txt ./
 
-# 安装 PyTorch CPU 版本（如需 GPU 版本，请注释下面一行，取消注释再下面的 GPU 行）
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-# GPU 版本（需要 NVIDIA Container Toolkit）：
-# RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cu121
-
-# 安装其余 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
+# 安装其余 Python 依赖 (清华源)
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 # 模型文件通过外部 docker-compose 挂载到 /app/paraphrase-multilingual-MiniLM-L12-v2
 

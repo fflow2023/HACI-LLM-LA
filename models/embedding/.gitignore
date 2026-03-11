@@ -23,6 +23,7 @@ fileUpload
 
 # model
 paraphrase-multilingual-MiniLM-L12-v2
+text2vec-large-chinese
 
 # log
 record.md

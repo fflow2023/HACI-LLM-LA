@@ -30,9 +30,10 @@ export const api = async (data: object): Promise<any> => {
 
 interface postParams {
 	message: string;
+	context?: string; // 新增：参考资料上下文
 	history: string[][];
 	stream: boolean;
-	character?: CharacterType; // 添加性格类型参数
+	character?: CharacterType;
 }
 
 interface remoteapiParams {
@@ -265,7 +266,12 @@ export function* fetchStreamData(
 	})();
 
 	// 组合系统提示词
-	const systemPrompt = `【语言规则】${forceLanguagePrompt}\n\n【身份定义】${staticSystemPrompt}\n\n【课程背景】${courseDescription}\n\n【性格定义】${characterPrompt}\n\n【再次强度必须遵守的语言规则】${forceLanguagePrompt}`;
+	let systemPrompt = `【语言规则】${forceLanguagePrompt}\n\n【身份定义】${staticSystemPrompt}\n\n【课程背景】${courseDescription}\n\n【性格定义】${characterPrompt}\n\n【再次强调必须遵守的语言规则】${forceLanguagePrompt}`;
+
+	// 如果有参考资料，将其注入为系统级上下文
+	if (postparams.context) {
+		systemPrompt += `\n\n【系统检索到的参考资料（用户不可见，仅作为参考，如果不相关请忽略）】：\n${postparams.context}`;
+	}
 	console.log("Final system prompt:", systemPrompt); // 添加日志
 
 	let systempormpt = [{ content: systemPrompt, role: "system" }];

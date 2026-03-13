@@ -147,7 +147,7 @@ watch(
 	},
 )
 
-const api_file_url = '/api/file'
+const api_file_url = '/AIlearning/api/file'
 </script>
 
 <template>

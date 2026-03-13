@@ -8,6 +8,13 @@ import { setupRouter } from './router'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 
 async function bootstrap() {
+  // Global debug toggle for console logs
+  if (import.meta.env.VITE_GLOB_LOG_DEBUG !== 'true') {
+    console.log = () => {}
+    console.info = () => {}
+    console.debug = () => {}
+  }
+
   const app = createApp(App)
   setupAssets()
 

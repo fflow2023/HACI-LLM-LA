@@ -209,7 +209,7 @@ export const useChatStore = defineStore("chat-store", {
 
 			try {
 				const authStore = useAuthStore();
-				const url = "/chat/record";
+				const url = "chat/record";
 
 				await axios.post(url, {
 					question: chat.text,

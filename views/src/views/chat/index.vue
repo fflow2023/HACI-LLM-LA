@@ -27,66 +27,66 @@ let controller = new AbortController()
 // ✅ 知识库配置
 type KnowledgeBaseType = '英语' | '日语' | '全英语' | '全日语';
 // ✅ 更新知识库选项，添加全英文和全日语
-const knowledgeBases = [
-  { 
-    label: '英语学习助手', 
-    value: '英语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-united-kingdom'
-  },
-  { 
-    label: '日语学习助手', 
-    value: '日语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-japan'
-  },
-  { 
-    label: '全英语对话', 
-    value: '全英语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-united-kingdom'
-  },
-  { 
-    label: '全日语对话', 
-    value: '全日语' as KnowledgeBaseType,
-    icon: 'twemoji:flag-japan'
-  }
-];
+// const knowledgeBases = [
+//   { 
+//     label: '英语学习助手', 
+//     value: '英语' as KnowledgeBaseType,
+//     icon: 'twemoji:flag-united-kingdom'
+//   },
+//   { 
+//     label: '日语学习助手', 
+//     value: '日语' as KnowledgeBaseType,
+//     icon: 'twemoji:flag-japan'
+//   },
+//   { 
+//     label: '全英语对话', 
+//     value: '全英语' as KnowledgeBaseType,
+//     icon: 'twemoji:flag-united-kingdom'
+//   },
+//   { 
+//     label: '全日语对话', 
+//     value: '全日语' as KnowledgeBaseType,
+//     icon: 'twemoji:flag-japan'
+//   }
+// ];
 
 // 当前知识库状态（指定类型）
 const currentKnowledgeBase = ref<KnowledgeBaseType>(
-  (localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
+	(localStorage.getItem('selectedKnowledgeBase') as KnowledgeBaseType) || '英语'
 );
 // ✅ 新增：计算实际知识库类型（用于API调用）- 强制走单一库
 const actualKnowledgeBase = computed(() => {
-  return 'corpus_default';
+	return 'corpus_default';
 });
 
 // ✅ 新增：计算强制语言模式 - 强制走中文
 const forceLanguageMode = computed(() => {
-  return 'cn';
+	return 'cn';
 });
 
-const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
+// const showKnowledgeBaseMenu = ref(false); // 控制菜单显示
 
-const selectKnowledgeBase = (value: KnowledgeBaseType) => {
-  currentKnowledgeBase.value = value;
-  showKnowledgeBaseMenu.value = false;
-  localStorage.setItem('selectedKnowledgeBase', value);
-  
-  // ✅ 新增：根据模式显示提示
-  if(value==='英语'){
-    ms.info('已切换到英语学习助手模式');
-  }
-  if(value==='日语'){
-    ms.info('已切换到日语学习助手模式');
-  }
-  if (value === '全英语') {
-    ms.info('已切换到全英语模式，AI将全程使用英文回答');
-  }
-  if (value === '全日语') {
-    ms.info('已切换到全日语模式，AI将全程使用日语回答');
-  }
-// 可以在这里添加知识库切换后的逻辑
-  console.log(`切换到${ actualKnowledgeBase.value}知识库`);
-};
+// const selectKnowledgeBase = (value: KnowledgeBaseType) => {
+//   currentKnowledgeBase.value = value;
+//   showKnowledgeBaseMenu.value = false;
+//   localStorage.setItem('selectedKnowledgeBase', value);
+
+//   // ✅ 新增：根据模式显示提示
+//   if(value==='英语'){
+//     ms.info('已切换到英语学习助手模式');
+//   }
+//   if(value==='日语'){
+//     ms.info('已切换到日语学习助手模式');
+//   }
+//   if (value === '全英语') {
+//     ms.info('已切换到全英语模式，AI将全程使用英文回答');
+//   }
+//   if (value === '全日语') {
+//     ms.info('已切换到全日语模式，AI将全程使用日语回答');
+//   }
+// // 可以在这里添加知识库切换后的逻辑
+//   console.log(`切换到${ actualKnowledgeBase.value}知识库`);
+// };
 
 // 以下为文本编辑器相关内容👇
 {
@@ -223,20 +223,15 @@ async function onConversation3() {
 
 	// 获取最新的用户输入（dataSources长度-1是刚添加的用户消息）
 	const lastUserMsg = dataSources.value[dataSources.value.length - 1]
-	let message = lastUserMsg?.requestOptions?.prompt || ''  //message就是刚刚的版合并消息
-	// ✅ 新增处理：去除"用户问题："前缀
+	let message = lastUserMsg?.requestOptions?.prompt || ''
 	message = message.replace(/^用户问题：/, '')
 	console.log('[DEBUG]message:\n' + message);
 
 	// 更新上下文处理逻辑
 	if (usingContext.value) {
-		// 仅处理用户消息（过滤AI回复）
 		const userMessages = dataSources.value.filter(item => item.inversion)
 		history.value = userMessages.map((msg, index) => [
-			// `Human:${msg.text}`,  //只将用户的原始输入内容保存到历史记录中
-			`Human:${msg.requestOptions.prompt}`,  //在历史记录中附带保留附件内容
-
-
+			`Human:${msg.requestOptions.prompt}`,
 			dataSources.value[index * 2 + 1]?.text.split('\n\n数据来源：\n\n')[0] || ''
 		])
 	} else {
@@ -244,14 +239,11 @@ async function onConversation3() {
 	}
 
 	controller = new AbortController()
-
 	scrollToBottom()
-
 	prompt.value = ''
 
 	let options: Chat.ConversationRequest = {}
 	const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-
 	if (lastContext && usingContext.value)
 		options = { ...lastContext }
 
@@ -267,7 +259,7 @@ async function onConversation3() {
 			requestOptions: {
 				prompt: message,
 				options: { ...options },
-				character: currentCharacter.value // 添加性格类型
+				character: currentCharacter.value
 			},
 		},
 	)
@@ -287,63 +279,49 @@ async function onConversation3() {
 				}
 
 				let documentContent: DocumentContent = { data: { content: [], url: '' } };
-				if (active.value) {
+				let mergedContent = ''
 
-					// 1. 获取知识库内容（增加 5 秒超时截断跳过逻辑）
+				if (active.value) {
 					try {
 						const fetchTask = chatfileContent({
 							message: message,
-							knowledgeBase: actualKnowledgeBase.value,  // 添加知识库参数
-							hyperparameters: {
-								document_number: 2,
-							}
+							knowledgeBase: actualKnowledgeBase.value,
+							hyperparameters: { document_number: 3 }
 						});
-						
-						const timeoutTask = new Promise<any>((resolve) => 
-							setTimeout(() => {
-								resolve({ data: { content: [], url: '' } });
-							}, 5000)
+
+						const timeoutTask = new Promise<any>((resolve) =>
+							setTimeout(() => resolve({ data: { content: [], url: '' } }), 5000)
 						);
 
 						documentContent = await Promise.race([fetchTask, timeoutTask]);
-						
+
+						for (let i = 0; i < documentContent.data.content.length; i++) {
+							mergedContent += `第${i + 1}份参考资料：\n${documentContent.data.content[i]}\n\n`
+						}
+						console.log("referenced content: ", mergedContent)
 					} catch (error: any) {
 						console.warn("知识库查询遇到内部错误，已跳过:", error);
-						// 不抛出Error终止，直接留空继续后续大模型通讯
 					}
-					// console.log("****", documentContent)
-
-					// 2. add the prompt to the message
-					let mergedContent = ''
-					for (let i = 0; i < documentContent.data.content.length; i++) {
-						mergedContent += `第${i + 1}份参考资料：` + documentContent.data.content[i]
-					}
-
-					console.log("referenced content: ", mergedContent)
-					if (documentContent.data.content.length > 0)
-						message = `请根据以下参考资料回答问题：\n\n${mergedContent}\n\n 用户的输入：${message}`
 				}
 
 				const gen = fetchStreamData({
 					message: message,
+					context: mergedContent, // 资料通过独立参数传递
 					history: history.value,
 					stream: stream,
-					character: currentCharacter.value, // 添加性格类型
-					signal: controller.signal, // 传入 signal 用于stream
-					forceLanguage: forceLanguageMode.value // ✅ 新增强制语言参数
-				},actualKnowledgeBase.value);
+					character: currentCharacter.value,
+					signal: controller.signal,
+					forceLanguage: forceLanguageMode.value
+				}, actualKnowledgeBase.value);
 
 				function step(value?: any) {
 					const result = gen.next(value);
-
 					if (!result.done) {
-						// 检查 result.value 是否为 Promise，若是则等待其完成，否则直接打印
 						if (result.value instanceof Promise) {
 							result.value.then(data => step(data)).catch(err => gen.throw(err));
 						} else {
 							dataSources.value[dataSources.value.length - 1].text += result.value;
-
-							step(); // 继续执行生成器
+							step();
 							scrollToBottomIfAtBottom()
 						}
 					} else {
@@ -363,42 +341,22 @@ async function onConversation3() {
 							},
 						)
 
-						// ✅ 新增保存逻辑（在流处理完成后保存）
-						// if (lastText.trim() && !lastText.includes('(无回答)')) {
-						//   chatStore.saveChatToServer(+uuid, {
-						//     text: message,
-						//     response: lastText,
-						//     dateTime: new Date().toISOString(),
-						//     inversion: false,
-						//     error: false,
-						//     loading: false,
-						//     requestOptions: {
-						//       prompt: message,
-						//       options: { ...options },
-						//       character: currentCharacter.value
-						//     }
-						//   })
-						// }
-
 						const mapKnowledgeBaseForDb = (): string => {
-							if (!active.value) return 'none'; // 知识库关闭 → none
-							return 'corpus_default'; // 全部路由到同一个语料库标识
+							if (!active.value) return 'none';
+							return 'corpus_default';
 						};
 
-						// 在保存逻辑部分修改为：
 						if (lastText.trim() && !lastText.includes('(无回答)')) {
-							// 获取对应的用户消息（当前AI消息索引-1）
 							const userMessage = dataSources.value[dataSources.value.length - 2]?.text || message;
-
 							chatStore.saveChatToServer(+uuid, {
-								text: userMessage, // 使用用户消息的text
+								text: userMessage,
 								response: lastText,
 								dateTime: new Date().toISOString(),
 								inversion: false,
 								error: false,
 								loading: false,
 								requestOptions: {
-									prompt: userMessage, // 同步修正prompt字段
+									prompt: userMessage,
 									options: { ...options },
 									character: currentCharacter.value,
 									knowledgeBase: mapKnowledgeBaseForDb()
@@ -408,10 +366,9 @@ async function onConversation3() {
 					}
 				}
 				step();
-			}
-			else {
+			} else {
 				let res = active.value ? await chatfile({ message, history: history.value }) : await chatSiliconflow({ message, history: history.value, stream: stream }, currentKnowledgeBase.value)
-				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](/api${res.data.url})` : res
+				let result = active.value ? `${res.data.response.text}\n\n数据来源：\n\n[${res.data.url.split('/static/')[1]}](/AIlearning/api${res.data.url})` : res
 				lastText += result
 			}
 
@@ -435,53 +392,19 @@ async function onConversation3() {
 	} catch (error: any) {
 		loading.value = false
 		const errorMessage = error?.message ?? t('common.wrong')
-
 		if (error.message === 'canceled') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					loading: false,
-				},
-			)
+			updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
 			scrollToBottomIfAtBottom()
 			return
 		}
-
 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
-
 		if (currentChat?.text && currentChat.text !== '') {
-			updateChatSome(
-				+uuid,
-				dataSources.value.length - 1,
-				{
-					text: `${currentChat.text}\n[${errorMessage}]`,
-					error: false,
-					loading: false,
-				},
-			)
+			updateChatSome(+uuid, dataSources.value.length - 1, { text: `${currentChat.text}\n[${errorMessage}]`, error: false, loading: false })
 			return
 		}
-
-		updateChat(
-			+uuid,
-			dataSources.value.length - 1,
-			{
-				dateTime: new Date().toLocaleString(),
-				text: errorMessage,
-				inversion: false,
-				error: true,
-				loading: false,
-				conversationOptions: null,
-				requestOptions: { prompt: message, options: { ...options } },
-			},
-		)
+		updateChat(+uuid, dataSources.value.length - 1, { dateTime: new Date().toLocaleString(), text: errorMessage, inversion: false, error: true, loading: false, conversationOptions: null, requestOptions: { prompt: message, options: { ...options } } })
 		scrollToBottomIfAtBottom()
-	} finally {
 	}
-	// const lastUserMsg = dataSources.value[dataSources.value.length - 1]
-	// const lastAIMsg = dataSources.value[dataSources.value.length - 2]
-	//保存消息记录到后端...zhy加油~
 }
 
 
@@ -711,7 +634,7 @@ const parseFile = async (fileItem: FileItem) => {
 	formData.append('file', fileItem.file);
 
 	try {
-		const url = '/file/parse';
+		const url = 'file/parse';
 		// ✅ 使用统一配置的 axios 实例
 		const response = await axios.post(url, formData, {
 			headers: {
@@ -1074,29 +997,33 @@ const getCurrentCharacterName = computed(() => {
 </template>
 
 <style scoped>
-
 /* 淡入淡出动画 */
 .fade-enter-active {
-  transition: opacity 0.2s, transform 0.2s;
+	transition: opacity 0.2s, transform 0.2s;
 }
+
 .fade-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
+	opacity: 0;
+	transform: translateY(-10px);
 }
+
 .fade-enter-to {
-  opacity: 1;
-  transform: translateY(0);
+	opacity: 1;
+	transform: translateY(0);
 }
+
 .fade-leave-active {
-  transition: opacity 0.15s, transform 0.15s;
+	transition: opacity 0.15s, transform 0.15s;
 }
+
 .fade-leave-from {
-  opacity: 1;
-  transform: translateY(0);
+	opacity: 1;
+	transform: translateY(0);
 }
+
 .fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+	opacity: 0;
+	transform: translateY(-10px);
 }
 
 /* 新增样式 */

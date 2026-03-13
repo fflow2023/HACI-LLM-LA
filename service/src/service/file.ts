@@ -544,8 +544,8 @@ export class FileService {
     // 文本切割,将文档拆分为块
     const textsplitter = new RecursiveCharacterTextSplitter({
       separators: ["\n\n", "\n", "。", "！", "？", ".", "!", "?"],
-      chunkSize: 500,
-      chunkOverlap: 100,
+      chunkSize: 800,
+      chunkOverlap: 150,
     });
     const docs = await loader.loadAndSplit(textsplitter);
 

@@ -1,0 +1,7 @@
+numpy==1.26.4
+fastapi==0.109.2
+uvicorn==0.27.1
+langchain-community
+transformers>=4.39.0
+sentence-transformers>=2.6.0
+langchain-huggingface
